@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { DEFAULT_REGION, getRegion, getTheme, getThemes } from './data/index.js'
-import { castVote, fetchResults, submitEase } from './lib/api.js'
+import { castVote, fetchResults, hasVoted, myVoteIn, submitEase } from './lib/api.js'
 import Start from './screens/Start.jsx'
 import Ballot from './screens/Ballot.jsx'
 import EaseScale from './screens/EaseScale.jsx'
@@ -28,10 +28,20 @@ export default function App() {
 
   const openTheme = (id) => {
     setThemeId(id)
-    setSelection(null)
     setVoteToken(null)
     setResults(null)
     setError(null)
+
+    // One ballot per theme per browser. A repeat visitor goes to the results
+    // instead of a second ballot — with their original pick restored, so the
+    // personal payoff still reads correctly however much the election has grown.
+    if (hasVoted(id)) {
+      setSelection(myVoteIn(id))
+      setScreen('results')
+      return
+    }
+
+    setSelection(null)
     setScreen('ballot')
   }
 

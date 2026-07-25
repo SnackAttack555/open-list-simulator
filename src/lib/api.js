@@ -15,25 +15,34 @@ import { mockTallies } from './mockElectorate.js'
 
 const isDev = import.meta.env?.DEV ?? false
 
-/** Theme ids this browser has already voted in. One vote per theme, per browser. */
-export function votedThemes() {
+/**
+ * This browser's ballots: { [themeId]: {listId, candidateId} }.
+ * One vote per theme per browser, so "312 people voted" means roughly 312 people.
+ */
+export function myBallots() {
   try {
     const raw = localStorage.getItem(VOTED_STORAGE_KEY)
-    return new Set(raw ? JSON.parse(raw) : [])
+    const parsed = raw ? JSON.parse(raw) : {}
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {}
   } catch {
-    return new Set() // private mode or blocked storage — the server cap still applies
+    return {} // private mode or blocked storage — the server cap still applies
   }
 }
 
 export function hasVoted(themeId) {
-  return votedThemes().has(themeId)
+  return Boolean(myBallots()[themeId])
 }
 
-function rememberVote(themeId) {
+/** The candidate this browser already picked in a theme, or null. */
+export function myVoteIn(themeId) {
+  return myBallots()[themeId] ?? null
+}
+
+function rememberVote(themeId, listId, candidateId) {
   try {
-    const all = votedThemes()
-    all.add(themeId)
-    localStorage.setItem(VOTED_STORAGE_KEY, JSON.stringify([...all]))
+    const all = myBallots()
+    all[themeId] = { listId, candidateId }
+    localStorage.setItem(VOTED_STORAGE_KEY, JSON.stringify(all))
   } catch {
     /* nothing we can do, and nothing that should break the flow */
   }
@@ -75,7 +84,7 @@ export async function fetchThemeCounts(regionId) {
 
 /** @returns {Promise<{token: string|null}>} token is needed to attach an ease answer. */
 export async function castVote({ themeId, listId, candidateId, regionId }) {
-  rememberVote(themeId)
+  rememberVote(themeId, listId, candidateId)
   try {
     return await postJson('api/vote', { themeId, listId, candidateId })
   } catch (err) {

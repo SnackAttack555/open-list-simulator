@@ -20,5 +20,21 @@ export const EASE_OPTIONS = [
   { value: 5, label: 'Very confusing', emoji: '😕' },
 ]
 
-/** localStorage key holding the theme ids this browser has already voted in. */
-export const VOTED_STORAGE_KEY = 'ols.voted.v1'
+/**
+ * localStorage key holding this browser's ballots: { [themeId]: {listId, candidateId} }.
+ *
+ * The choice is stored, not just the fact of voting, so someone returning a week
+ * later still gets "you voted for Grogu" against the grown-up results instead of
+ * an anonymous tally.
+ */
+export const VOTED_STORAGE_KEY = 'ols.ballots.v2'
+
+/**
+ * Votes accepted per IP hash per theme.
+ *
+ * Not 1. A classroom, an office, or a conference room shares a single public IP,
+ * and a cap of 1 would lock out everyone after whoever voted first — the exact
+ * opposite of useful for the setting this tool is built for. 35 covers a typical
+ * room while still stopping a script.
+ */
+export const VOTE_CAP_PER_IP = 35

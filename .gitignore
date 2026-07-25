@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Generated: reproduce with `npm run seed`
+seed.sql
+
+# Wrangler local state (local D1 lives here)
+.wrangler/

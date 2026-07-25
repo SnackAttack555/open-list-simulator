@@ -1,0 +1,23 @@
+name = "open-list-simulator"
+pages_build_output_dir = "dist"
+compatibility_date = "2025-06-01"
+
+# Cloudflare D1.
+#
+# database_id below is a local-only placeholder so `npm run db:reset` and
+# `npm run preview:full` agree on which local SQLite file to use — local D1 never
+# checks the id against Cloudflare. REPLACE IT with the real id before deploying:
+#   npx wrangler d1 create ols-votes
+#
+# Then apply the schema and seed, locally and remotely:
+#   npx wrangler d1 execute ols-votes --local  --file=./schema.sql
+#   npx wrangler d1 execute ols-votes --local  --file=./seed.sql
+#   npx wrangler d1 execute ols-votes --remote --file=./schema.sql
+#   npx wrangler d1 execute ols-votes --remote --file=./seed.sql
+#
+# And set the IP-hash salt as a secret (never commit it):
+#   npx wrangler pages secret put VOTE_SALT
+[[d1_databases]]
+binding = "DB"
+database_name = "ols-votes"
+database_id = "00000000-0000-4000-8000-00000000d1d1"

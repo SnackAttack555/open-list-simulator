@@ -63,9 +63,10 @@ export default function Start({ region, themes, onPick }) {
                 <span className="min-w-0 flex-1">
                   <span className="block text-lg font-semibold">{theme.name}</span>
                   <span className="block text-sm text-[var(--ink-soft)]">
-                    {theme.tagline}
+                    {/* Say what the tap does. A repeat visitor gets the results,
+                        not a second ballot. */}
+                    {already ? 'You voted — see the results' : theme.tagline}
                     {count > 0 && ` · ${count.toLocaleString()} voted`}
-                    {already && ' · you voted'}
                   </span>
                 </span>
                 {/* Colour swatches double as a preview of how many lists are on the ballot. */}
