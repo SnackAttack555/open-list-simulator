@@ -28,7 +28,7 @@ export const REGIONS = {
       id: 'detroit',
       name: 'Detroit Sports Legends',
       emoji: '🏟️',
-      tagline: 'Four franchises, five seats',
+      tagline: 'Four franchises',
       lists: [
         {
           id: 'lions',

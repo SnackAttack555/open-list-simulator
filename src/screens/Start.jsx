@@ -62,11 +62,14 @@ export default function Start({ region, themes, onPick }) {
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-lg font-semibold">{theme.name}</span>
-                  <span className="block text-sm text-[var(--ink-soft)]">
-                    {/* Say what the tap does. A repeat visitor gets the results,
-                        not a second ballot. */}
-                    {already ? 'You voted — see the results' : theme.tagline}
-                    {count > 0 && ` · ${count.toLocaleString()} voted`}
+                  {/* One line, always. Wrapping here made the cards ragged
+                      heights, so both halves stay short: the taglines no longer
+                      repeat "five seats" (the header above already says it), and
+                      a repeat visitor gets "Your vote is in" rather than a
+                      sentence. */}
+                  <span className="block truncate text-sm text-[var(--ink-soft)]">
+                    {already ? 'Your vote is in' : theme.tagline}
+                    {count > 0 && ` · ${count.toLocaleString()} vote${count === 1 ? '' : 's'}`}
                   </span>
                 </span>
                 {/* Colour swatches double as a preview of how many lists are on the ballot. */}

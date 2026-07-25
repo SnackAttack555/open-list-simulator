@@ -33,7 +33,7 @@ export const UNIVERSAL_THEMES = [
     id: 'hogwarts',
     name: 'Hogwarts Houses',
     emoji: '🏰',
-    tagline: 'Four houses, five seats',
+    tagline: 'Four houses',
     lists: [
       {
         id: 'gryffindor',
@@ -93,7 +93,7 @@ export const UNIVERSAL_THEMES = [
     id: 'starwars',
     name: 'Star Wars Factions',
     emoji: '🌌',
-    tagline: 'Five factions, five seats',
+    tagline: 'Five factions',
     lists: [
       {
         id: 'jedi',
@@ -154,7 +154,7 @@ export const UNIVERSAL_THEMES = [
     id: 'superheroes',
     name: 'Superheroes',
     emoji: '🦸',
-    tagline: 'Five teams, five seats',
+    tagline: 'Five teams',
     lists: [
       {
         id: 'avengers',
@@ -197,7 +197,7 @@ export const UNIVERSAL_THEMES = [
     id: 'animation',
     name: 'Animated Movies',
     emoji: '🎬',
-    tagline: 'Five studios, five seats',
+    tagline: 'Five studios',
     lists: [
       {
         id: 'disney',
@@ -264,7 +264,7 @@ export const UNIVERSAL_THEMES = [
     id: 'animals',
     name: 'Famous Animals',
     emoji: '🐾',
-    tagline: 'Four teams, five seats',
+    tagline: 'Four teams',
     lists: [
       {
         id: 'cats',
