@@ -1,122 +1,121 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useCallback, useEffect, useState } from 'react'
+import { DEFAULT_REGION, getRegion, getTheme, getThemes } from './data/index.js'
+import { castVote, fetchResults, submitEase } from './lib/api.js'
+import Start from './screens/Start.jsx'
+import Ballot from './screens/Ballot.jsx'
+import EaseScale from './screens/EaseScale.jsx'
+import Results from './screens/Results.jsx'
 
-function App() {
-  const [count, setCount] = useState(0)
+const REGION = DEFAULT_REGION
+
+export default function App() {
+  const region = getRegion(REGION)
+  const themes = getThemes(REGION)
+
+  const [screen, setScreen] = useState('start')
+  const [themeId, setThemeId] = useState(null)
+  const [selection, setSelection] = useState(null)
+  const [voteToken, setVoteToken] = useState(null)
+  const [results, setResults] = useState(null)
+  const [error, setError] = useState(null)
+
+  const theme = themeId ? getTheme(themeId, REGION) : null
+
+  // Each screen is its own page as far as the reader is concerned.
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [screen])
+
+  const openTheme = (id) => {
+    setThemeId(id)
+    setSelection(null)
+    setVoteToken(null)
+    setResults(null)
+    setError(null)
+    setScreen('ballot')
+  }
+
+  const goStart = () => {
+    setScreen('start')
+    setThemeId(null)
+    setSelection(null)
+  }
+
+  /**
+   * Record the vote the moment it is cast, not after the ease question. Someone
+   * who bounces off the ease screen has still voted, and their ballot should count.
+   */
+  const handleCast = useCallback(async () => {
+    setScreen('ease')
+    try {
+      const [voted] = await Promise.all([
+        castVote({
+          themeId,
+          listId: selection.listId,
+          candidateId: selection.candidateId,
+          regionId: REGION,
+        }),
+        // Prefetch while the ease question is on screen so results feel instant.
+        fetchResults(themeId, REGION).then(setResults),
+      ])
+      setVoteToken(voted?.token ?? null)
+    } catch (err) {
+      console.error(err)
+      setError('We could not reach the vote server, so this ballot may not have counted.')
+    }
+  }, [themeId, selection])
+
+  const handleEase = useCallback(
+    async (value) => {
+      setScreen('results')
+      if (value == null || !voteToken) return
+      try {
+        await submitEase({ token: voteToken, ease: value })
+      } catch (err) {
+        // A missing ease answer is not worth interrupting anyone over.
+        console.error(err)
+      }
+    },
+    [voteToken],
+  )
+
+  // Results were prefetched during the ease screen; this covers a slow network.
+  useEffect(() => {
+    if (screen !== 'results' || results || !themeId) return
+    fetchResults(themeId, REGION)
+      .then(setResults)
+      .catch(() => setError('We could not load the results.'))
+  }, [screen, results, themeId])
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    /* dvh, not `min-h-full`: a percentage min-height resolves against the
+       parent's *height*, which is auto here, so it would collapse and the
+       ballot's sticky bar would float mid-screen. dvh also tracks mobile
+       browser chrome as it hides. */
+    <div className="mx-auto flex min-h-dvh max-w-[520px] flex-col">
+      {screen === 'start' && <Start region={region} themes={themes} onPick={openTheme} />}
 
-      <div className="ticks"></div>
+      {screen === 'ballot' && theme && (
+        <Ballot
+          theme={theme}
+          selection={selection}
+          onSelect={setSelection}
+          onCast={handleCast}
+          onBack={goStart}
+        />
+      )}
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+      {screen === 'ease' && <EaseScale onAnswer={handleEase} />}
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+      {screen === 'results' && theme && (
+        <Results
+          theme={theme}
+          myVote={selection}
+          results={results}
+          error={error}
+          onRestart={goStart}
+        />
+      )}
+    </div>
   )
 }
-
-export default App
