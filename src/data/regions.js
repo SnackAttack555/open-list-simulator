@@ -28,6 +28,8 @@ export const REGIONS = {
       id: 'detroit',
       name: 'Detroit Sports Legends',
       emoji: '🏟️',
+      noun: 'person',
+      nounPlural: 'people',
       tagline: 'Four franchises',
       lists: [
         {

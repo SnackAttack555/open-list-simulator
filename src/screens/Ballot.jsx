@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import BallotBoxIcon from '../components/BallotBoxIcon.jsx'
+import { ballotOrder } from '../data/index.js'
 
 /**
  * The ballot: one party list per card, in a horizontal scroll-snap carousel.
@@ -23,10 +24,17 @@ export default function Ballot({ theme, selection, onSelect, onCast, onBack }) {
   const [activeCard, setActiveCard] = useState(0)
   const [dropping, setDropping] = useState(false)
 
+  // Each list in printed ballot order — alphabetical, so the order carries no
+  // hint about who deserves the seat.
+  const printedLists = useMemo(
+    () => theme.lists.map((list) => ({ ...list, candidates: ballotOrder(list.candidates) })),
+    [theme],
+  )
+
   // Flat ballot order, so arrow keys cross card boundaries the way they should.
   const flat = useMemo(
     () =>
-      theme.lists.flatMap((list, listIndex) =>
+      printedLists.flatMap((list, listIndex) =>
         list.candidates.map((cand) => ({
           listId: list.id,
           listIndex,
@@ -34,7 +42,7 @@ export default function Ballot({ theme, selection, onSelect, onCast, onBack }) {
           name: cand.name,
         })),
       ),
-    [theme],
+    [printedLists],
   )
 
   const selectedFlatIndex = selection
@@ -43,7 +51,7 @@ export default function Ballot({ theme, selection, onSelect, onCast, onBack }) {
       )
     : -1
 
-  const selectedList = selection ? theme.lists.find((l) => l.id === selection.listId) : null
+  const selectedList = selection ? printedLists.find((l) => l.id === selection.listId) : null
   const selectedName = selectedFlatIndex >= 0 ? flat[selectedFlatIndex].name : null
 
   // Which card is centred, for the chip highlight. Cheap rAF-throttled read of
@@ -74,20 +82,57 @@ export default function Ballot({ theme, selection, onSelect, onCast, onBack }) {
       })
       setActiveCard(best)
     }
+    // Scroll snapping nudges the final position after the last scroll event, so
+    // measuring on 'scroll' alone can leave the chip one card behind. Re-measure
+    // when scrolling ends, with a timer for engines lacking 'scrollend'.
+    let settle = 0
     const onScroll = () => {
       if (!frame) frame = requestAnimationFrame(measure)
+      clearTimeout(settle)
+      settle = setTimeout(measure, 140)
     }
     scroller.addEventListener('scroll', onScroll, { passive: true })
+    scroller.addEventListener('scrollend', measure)
     measure()
     return () => {
       scroller.removeEventListener('scroll', onScroll)
+      scroller.removeEventListener('scrollend', measure)
+      clearTimeout(settle)
       if (frame) cancelAnimationFrame(frame)
     }
   }, [theme])
 
   const scrollToCard = useCallback((index) => {
+    const scroller = scrollerRef.current
     const el = cardRefs.current[index]
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+    if (!scroller || !el) return
+
+    // Light the chip now rather than inferring it from scroll events. Tapping a
+    // chip is an unambiguous statement of which list you want; waiting for the
+    // scroll to report back is what left the wrong chip lit.
+    setActiveCard(index)
+
+    // Centre the card, clamped to what the container can actually reach. The
+    // first and last cards can't be centred — asking for an out-of-range offset
+    // makes the browser clamp it, which otherwise reads as "the scroll failed".
+    const centred =
+      el.offsetLeft - scroller.offsetLeft - (scroller.clientWidth - el.offsetWidth) / 2
+    const max = scroller.scrollWidth - scroller.clientWidth
+    const left = Math.max(0, Math.min(max, centred))
+    const from = scroller.scrollLeft
+    scroller.scrollTo({ left, behavior: 'smooth' })
+
+    // Some engines ignore programmatic smooth scrolling on a mandatory-snap
+    // container and silently do nothing. If two frames later it hasn't budged
+    // at all, jump instead — a carousel that doesn't move is worse than one
+    // that moves without easing.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (scroller.scrollLeft === from && Math.abs(left - from) > 2) {
+          scroller.scrollLeft = left
+        }
+      })
+    })
   }, [])
 
   const moveFocus = useCallback(
@@ -159,7 +204,7 @@ export default function Ballot({ theme, selection, onSelect, onCast, onBack }) {
         aria-label="Jump to a list"
         className="no-scrollbar mt-3 flex gap-2 overflow-x-auto px-4 pb-1"
       >
-        {theme.lists.map((list, i) => {
+        {printedLists.map((list, i) => {
           const isActive = i === activeCard
           const holdsSelection = selection?.listId === list.id
           return (
@@ -195,7 +240,7 @@ export default function Ballot({ theme, selection, onSelect, onCast, onBack }) {
         aria-label={`Candidates in the ${theme.name} election`}
         className="no-scrollbar flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 py-3"
       >
-        {theme.lists.map((list, listIndex) => (
+        {printedLists.map((list, listIndex) => (
           <section
             key={list.id}
             ref={(el) => {

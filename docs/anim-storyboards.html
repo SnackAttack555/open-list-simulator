@@ -1,0 +1,310 @@
+<!doctype html><meta charset="utf-8">
+<title>Results animation — two directions</title>
+<style>
+  body{font:15px/1.5 ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;background:#f7f7f5;color:#14161a;margin:0 auto;padding:30px 26px 60px;max-width:1180px}
+  h1{font-size:26px;margin:0 0 4px} h2{font-size:20px;margin:38px 0 2px} .sub{color:#5a6069;margin:0 0 10px}
+  .diag{background:#fff;border:1px solid #d9dade;border-radius:12px;padding:14px 18px;margin:16px 0}
+  .diag li{margin:4px 0}
+  .strip{display:flex;flex-wrap:wrap;gap:14px;padding:10px 2px 4px}
+  .cell{width:266px;flex-shrink:0}
+  .panel{width:264px;min-height:335px;background:#fff;border:1px solid #d9dade;border-radius:14px;padding:12px;box-sizing:border-box;position:relative}
+  .knum{position:absolute;top:8px;right:11px;font-size:11px;color:#c2c6cc}
+  .ft{font-weight:600;font-size:13px;margin-bottom:10px}
+  .cap{font-size:12.5px;color:#5a6069;margin-top:8px;line-height:1.45}
+  .brow{margin-bottom:22px} .blab{display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px}
+  .track{position:relative;width:150px;height:14px;background:#eceef0;border-radius:7px}
+  .fill{position:absolute;left:0;top:0;height:14px;border-radius:7px}
+  .gl{position:absolute;top:-4px;bottom:-4px;width:0;border-left:1.5px dashed #a7adb5;z-index:2}
+  .stubseg{outline:2px dashed;outline-offset:2px;opacity:.9}
+  .chiprow{position:relative;height:20px;margin-top:5px}
+  .chip{position:absolute;top:2px;width:16px;height:16px;border-radius:4px;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center}
+  .leftnote{position:absolute;top:4px;font-size:9.5px;color:#5a6069;white-space:nowrap}
+  .quota{background:#fff;border:1px solid #d9dade;border-radius:10px;padding:8px 10px;font-size:12.5px;margin-top:6px}
+  .lo-head{font-size:11.5px;color:#5a6069;margin-bottom:12px}
+  .lo{margin-bottom:18px}
+  .lo-track{border:1px dashed #a7adb5;background:#f3f4f6}
+  .lo-scale{display:flex;justify-content:space-between;width:150px;font-size:9.5px;color:#5a6069;margin-top:-10px}
+  .card{border:1px solid #d9dade;border-radius:12px;overflow:hidden}
+  .chead{color:#fff;font-size:12px;font-weight:600;padding:7px 10px;display:flex;justify-content:space-between}
+  .seatslots{letter-spacing:2px}
+  .crow{display:flex;align-items:center;gap:6px;padding:6.5px 10px;border-top:1px solid #d9dade;font-size:12px}
+  .cname{width:76px;flex-shrink:0} .ctrack{flex:1;height:8px;background:#eceef0;border-radius:4px;overflow:hidden;display:block}
+  .cfill{display:block;height:8px;border-radius:4px} .cvotes{font-size:11px;width:26px;text-align:right}
+  .winrow{background:rgba(140,28,19,.08)} .star{color:#8c1c13;font-size:10px;font-weight:700}
+  .pay{border:2px solid;border-radius:12px;padding:9px 11px;font-size:12px;line-height:1.45}
+  .winchips{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}
+  .winchips span{border:1.5px solid;border-radius:999px;padding:2px 8px;font-size:10.5px;background:#fff}
+  .stat{margin-top:10px;font-size:12.5px}
+  table{border-collapse:collapse;background:#fff;border:1px solid #d9dade;border-radius:12px;margin-top:14px;font-size:14px}
+  th,td{border:1px solid #d9dade;padding:8px 14px;text-align:left;vertical-align:top}
+  th{background:#eef0f2}
+  .rec{background:#fff;border:1px solid #d9dade;border-left:4px solid #2f4858;border-radius:10px;padding:14px 18px;margin-top:26px}
+  .abc{display:flex;gap:18px;margin-top:10px} .abc .card{width:220px}
+</style>
+
+<h1>Rebuilding the results animation as an explanation</h1>
+<p class="sub">Storyboards, not final art. Both options use the same running example: 1,000 votes, 5 seats, so a seat costs 200 votes (20%). Gryffindor 40% · Slytherin 25% · Ravenclaw 23% · Hufflepuff 12% — four seats are won outright, and <b>the fifth is a three-way leftover contest</b>.</p>
+
+<div class="diag"><b>Why the current animation doesn’t teach:</b>
+<ul>
+<li>Seat tokens <i>appear</i> next to the bars — nothing shows a seat being <i>earned</i> by 20% of the votes.</li>
+<li>The “Elected” list shows only winners. The ballot order they beat is never on screen, so “even if they weren’t the top of the list” can’t land.</li>
+<li>Timed beats (1.15s) rush the ideas past the reader instead of letting each one settle.</li>
+</ul>
+Both options below tell the story in two acts — <b>Act 1: votes → seats per team</b> (including the leftover seat), <b>Act 2: inside your team, personal votes → who sits</b> — and only zoom into <i>the voter’s own team</i> for Act 2 (others expandable).</div>
+
+<h2>Option A — “A seat costs 20%”</h2>
+<p class="sub">Keeps today’s bars, but the quota becomes a visible price line instead of a sentence. Calm, compact, roughly half the build of Option B.</p>
+<div class="strip">
+
+<div class="cell">
+  <div class="panel"><div class="knum">1</div><div class="ft">The count</div><div class="bars">
+  <div class="brow">
+    <div class="blab"><span>⚡ Gryffindor</span><b>40%</b></div>
+    <div class="track"><div class="fill" style="width:60px;background:#8c1c13"></div></div>
+    
+  </div>
+  <div class="brow">
+    <div class="blab"><span>🐍 Slytherin</span><b>25%</b></div>
+    <div class="track"><div class="fill" style="width:37.5px;background:#1b5e3f"></div></div>
+    
+  </div>
+  <div class="brow">
+    <div class="blab"><span>🦅 Ravenclaw</span><b>23%</b></div>
+    <div class="track"><div class="fill" style="width:34.5px;background:#1e3a8a"></div></div>
+    
+  </div>
+  <div class="brow">
+    <div class="blab"><span>🦡 Hufflepuff</span><b>12%</b></div>
+    <div class="track"><div class="fill" style="width:18px;background:#8a6100"></div></div>
+    
+  </div></div></div>
+  <div class="cap">Bars grow to each team’s share of <b>all</b> votes. Gryffindor: 40%.</div>
+</div>
+
+<div class="cell">
+  <div class="panel"><div class="knum">2</div><div class="ft">The price of a seat</div><div class="bars">
+  <div class="brow">
+    <div class="blab"><span>⚡ Gryffindor</span><b>40%</b></div>
+    <div class="track"><div class="gl" style="left:30px"></div><div class="gl" style="left:60px"></div><div class="gl" style="left:90px"></div><div class="gl" style="left:120px"></div><div class="fill" style="width:60px;background:#8c1c13"></div></div>
+    
+  </div>
+  <div class="brow">
+    <div class="blab"><span>🐍 Slytherin</span><b>25%</b></div>
+    <div class="track"><div class="gl" style="left:30px"></div><div class="gl" style="left:60px"></div><div class="gl" style="left:90px"></div><div class="gl" style="left:120px"></div><div class="fill" style="width:37.5px;background:#1b5e3f"></div></div>
+    
+  </div>
+  <div class="brow">
+    <div class="blab"><span>🦅 Ravenclaw</span><b>23%</b></div>
+    <div class="track"><div class="gl" style="left:30px"></div><div class="gl" style="left:60px"></div><div class="gl" style="left:90px"></div><div class="gl" style="left:120px"></div><div class="fill" style="width:34.5px;background:#1e3a8a"></div></div>
+    
+  </div>
+  <div class="brow">
+    <div class="blab"><span>🦡 Hufflepuff</span><b>12%</b></div>
+    <div class="track"><div class="gl" style="left:30px"></div><div class="gl" style="left:60px"></div><div class="gl" style="left:90px"></div><div class="gl" style="left:120px"></div><div class="fill" style="width:18px;background:#8a6100"></div></div>
+    
+  </div></div><div class="quota">1,000 votes ÷ 5 seats = <b>200 votes per seat</b>. Price lines slice every bar into seat-sized chunks.</div></div>
+  <div class="cap">Dashed price lines drop across all bars at once — every full chunk is one seat. Gryffindor’s bar reaches exactly the 2nd line.</div>
+</div>
+
+<div class="cell">
+  <div class="panel"><div class="knum">3</div><div class="ft">Full chunks become seats</div><div class="bars">
+  <div class="brow">
+    <div class="blab"><span>⚡ Gryffindor</span><b>40%</b></div>
+    <div class="track"><div class="gl" style="left:30px"></div><div class="gl" style="left:60px"></div><div class="gl" style="left:90px"></div><div class="gl" style="left:120px"></div><div class="fill" style="width:60px;background:#8c1c13"></div></div>
+    <div class="chiprow"><span class="chip" style="background:#8c1c13;left:7px">✓</span><span class="chip" style="background:#8c1c13;left:37px">✓</span></div>
+  </div>
+  <div class="brow">
+    <div class="blab"><span>🐍 Slytherin</span><b>25%</b></div>
+    <div class="track"><div class="gl" style="left:30px"></div><div class="gl" style="left:60px"></div><div class="gl" style="left:90px"></div><div class="gl" style="left:120px"></div><div class="fill" style="width:30px;background:#1b5e3f"></div><div class="fill stubseg" style="left:30px;width:7.5px;background:#1b5e3f;outline-color:#1b5e3f;border-radius:0 7px 7px 0;"></div></div>
+    <div class="chiprow"><span class="chip" style="background:#1b5e3f;left:7px">✓</span></div>
+  </div>
+  <div class="brow">
+    <div class="blab"><span>🦅 Ravenclaw</span><b>23%</b></div>
+    <div class="track"><div class="gl" style="left:30px"></div><div class="gl" style="left:60px"></div><div class="gl" style="left:90px"></div><div class="gl" style="left:120px"></div><div class="fill" style="width:30px;background:#1e3a8a"></div><div class="fill stubseg" style="left:30px;width:4.5px;background:#1e3a8a;outline-color:#1e3a8a;border-radius:0 7px 7px 0;"></div></div>
+    <div class="chiprow"><span class="chip" style="background:#1e3a8a;left:7px">✓</span></div>
+  </div>
+  <div class="brow">
+    <div class="blab"><span>🦡 Hufflepuff</span><b>12%</b></div>
+    <div class="track"><div class="gl" style="left:30px"></div><div class="gl" style="left:60px"></div><div class="gl" style="left:90px"></div><div class="gl" style="left:120px"></div><div class="fill" style="width:0px;background:#8a6100"></div><div class="fill stubseg" style="left:0px;width:18px;background:#8a6100;outline-color:#8a6100;"></div></div>
+    <div class="chiprow"><span class="leftnote" style="left:2px">no full chunk yet</span></div>
+  </div></div></div>
+  <div class="cap">Each full chunk clunks into a seat: 2–1–1–0. That fills only <b>4 of the 5 seats</b> — and every team has a dash-outlined stub of votes that didn’t reach the next line.</div>
+</div>
+
+<div class="cell">
+  <div class="panel"><div class="knum">4</div><div class="ft">The leftover seat</div>
+  <div class="lo-head">1 seat still empty · price: <b>200 votes</b></div>
+  
+    <div class="brow lo">
+      <div class="blab"><span>⚡ Gryffindor</span><b>0 left over</b></div>
+      <div class="track lo-track">
+        <div class="fill" style="width:0px;background:#8c1c13"></div>
+        
+      </div>
+    </div>
+    <div class="brow lo">
+      <div class="blab"><span>🐍 Slytherin</span><b>50 left over</b></div>
+      <div class="track lo-track">
+        <div class="fill" style="width:37.5px;background:#1b5e3f"></div>
+        
+      </div>
+    </div>
+    <div class="brow lo">
+      <div class="blab"><span>🦅 Ravenclaw</span><b>30 left over</b></div>
+      <div class="track lo-track">
+        <div class="fill" style="width:22.5px;background:#1e3a8a"></div>
+        
+      </div>
+    </div>
+    <div class="brow lo">
+      <div class="blab"><span>🦡 Hufflepuff</span><b>120 left over</b></div>
+      <div class="track lo-track">
+        <div class="fill" style="width:90px;background:#8a6100"></div>
+        <span class="chip" style="background:#8a6100;left:96px;top:-1px">+</span>
+      </div>
+    </div>
+  <div class="lo-scale"><span>0</span><span>a full seat = 200</span></div></div>
+  <div class="cap">The stubs get their own zoomed-in race: each team’s leftover votes, measured against the 200-vote price. Nobody has a full seat’s worth — so the <b>closest</b> leftover wins. Hufflepuff’s 120 beats Slytherin’s 50 and Ravenclaw’s 30.</div>
+</div>
+
+<div class="cell">
+  <div class="panel"><div class="knum">5</div><div class="ft">Inside your team</div>
+  <div class="card">
+    <div class="chead" style="background:#8c1c13">⚡ Gryffindor — 2 seats to fill
+      <span class="seatslots">▢▢</span></div>
+    
+      <div class="crow ">
+        <span class="cname">Harry</span>
+        <span class="ctrack"><span class="cfill" style="width:46.8px;background:#8c1c13"></span></span><b class="cvotes">90</b>
+      </div>
+      <div class="crow ">
+        <span class="cname">Hermione</span>
+        <span class="ctrack"><span class="cfill" style="width:78px;background:#8c1c13"></span></span><b class="cvotes">150</b>
+      </div>
+      <div class="crow ">
+        <span class="cname">Minerva</span>
+        <span class="ctrack"><span class="cfill" style="width:15.600000000000001px;background:#8c1c13"></span></span><b class="cvotes">30</b>
+      </div>
+      <div class="crow ">
+        <span class="cname">Neville</span>
+        <span class="ctrack"><span class="cfill" style="width:10.4px;background:#8c1c13"></span></span><b class="cvotes">20</b>
+      </div>
+      <div class="crow ">
+        <span class="cname">Ron</span>
+        <span class="ctrack"><span class="cfill" style="width:57.199999999999996px;background:#8c1c13"></span></span><b class="cvotes">110</b>
+      </div>
+  </div></div>
+  <div class="cap">Act 2 zooms into the voter’s own team. The candidates appear <b>in ballot order</b>, then each one’s personal votes count up beside their name.</div>
+</div>
+
+<div class="cell">
+  <div class="panel"><div class="knum">6</div><div class="ft">The re-sort</div>
+  <div class="card">
+    <div class="chead" style="background:#8c1c13">⚡ Gryffindor — 2 seats to fill
+      <span class="seatslots">★★</span></div>
+    
+      <div class="crow winrow">
+        <span class="cname">Hermione <span class="star">★ seat</span></span>
+        <span class="ctrack"><span class="cfill" style="width:78px;background:#8c1c13"></span></span><b class="cvotes">150</b>
+      </div>
+      <div class="crow winrow">
+        <span class="cname">Ron <span class="star">★ seat</span></span>
+        <span class="ctrack"><span class="cfill" style="width:57.199999999999996px;background:#8c1c13"></span></span><b class="cvotes">110</b>
+      </div>
+      <div class="crow ">
+        <span class="cname">Harry</span>
+        <span class="ctrack"><span class="cfill" style="width:46.8px;background:#8c1c13"></span></span><b class="cvotes">90</b>
+      </div>
+      <div class="crow ">
+        <span class="cname">Minerva</span>
+        <span class="ctrack"><span class="cfill" style="width:15.600000000000001px;background:#8c1c13"></span></span><b class="cvotes">30</b>
+      </div>
+      <div class="crow ">
+        <span class="cname">Neville</span>
+        <span class="ctrack"><span class="cfill" style="width:10.4px;background:#8c1c13"></span></span><b class="cvotes">20</b>
+      </div>
+  </div></div>
+  <div class="cap">The list re-sorts by personal votes, live. Hermione and Ron rise and take the 2 seats — Ron was <b>last on the ballot</b>. The printed order never mattered.</div>
+</div>
+
+<div class="cell">
+  <div class="panel"><div class="knum">7</div><div class="ft">Your vote</div>
+  <div class="pay" style="border-color:#8c1c13">You voted for <b>Neville Longbottom</b>. Neville didn’t win a seat — but your vote helped Gryffindor earn its 2, so it still elected Gryffindors.</div>
+  <div class="winchips">
+    <span style="border-color:#8c1c13">⚡ Hermione</span><span style="border-color:#8c1c13">⚡ Ron</span>
+    <span style="border-color:#1b5e3f">🐍 Severus</span><span style="border-color:#1e3a8a">🦅 Luna</span>
+    <span style="border-color:#8a6100">🦡 Cedric</span>
+  </div>
+  <div class="stat"><b>100% of voters</b> helped elect someone from their team.</div></div>
+  <div class="cap">Unchanged ending: personal payoff, the representation stat, then the winner-take-all reveal on tap.</div>
+</div>
+</div>
+
+<h2>Option B — “A hundred voters walk in”</h2>
+<p class="sub">The electorate becomes 100 dots (≈10 voters each — real counts stay on screen). Votes literally accumulate into seats: the strongest version of “votes add up”, at roughly twice the build.</p>
+<div class="strip">
+
+<div class="cell">
+  <div class="panel"><div class="knum">1</div><div class="ft">The electorate</div><svg width="222" height="152" viewBox="0 0 222 152"><circle cx="14" cy="12" r="3.4" fill="#9aa0a8"/><circle cx="35.5" cy="12" r="3.4" fill="#9aa0a8"/><circle cx="57" cy="12" r="3.4" fill="#9aa0a8"/><circle cx="78.5" cy="12" r="3.4" fill="#9aa0a8"/><circle cx="100" cy="12" r="3.4" fill="#9aa0a8"/><circle cx="121.5" cy="12" r="3.4" fill="#9aa0a8"/><circle cx="143" cy="12" r="3.4" fill="#9aa0a8"/><circle cx="164.5" cy="12" r="3.4" fill="#9aa0a8"/><circle cx="186" cy="12" r="3.4" fill="#9aa0a8"/><circle cx="207.5" cy="12" r="3.4" fill="#9aa0a8"/><circle cx="14" cy="27" r="3.4" fill="#9aa0a8"/><circle cx="35.5" cy="27" r="3.4" fill="#9aa0a8"/><circle cx="57" cy="27" r="3.4" fill="#9aa0a8"/><circle cx="78.5" cy="27" r="3.4" fill="#9aa0a8"/><circle cx="100" cy="27" r="3.4" fill="#9aa0a8"/><circle cx="121.5" cy="27" r="3.4" fill="#9aa0a8"/><circle cx="143" cy="27" r="3.4" fill="#9aa0a8"/><circle cx="164.5" cy="27" r="3.4" fill="#9aa0a8"/><circle cx="186" cy="27" r="3.4" fill="#9aa0a8"/><circle cx="207.5" cy="27" r="3.4" fill="#9aa0a8"/><circle cx="14" cy="42" r="3.4" fill="#9aa0a8"/><circle cx="35.5" cy="42" r="3.4" fill="#9aa0a8"/><circle cx="57" cy="42" r="3.4" fill="#9aa0a8"/><circle cx="78.5" cy="42" r="3.4" fill="#9aa0a8"/><circle cx="100" cy="42" r="3.4" fill="#9aa0a8"/><circle cx="121.5" cy="42" r="3.4" fill="#9aa0a8"/><circle cx="143" cy="42" r="3.4" fill="#9aa0a8"/><circle cx="164.5" cy="42" r="3.4" fill="#9aa0a8"/><circle cx="186" cy="42" r="3.4" fill="#9aa0a8"/><circle cx="207.5" cy="42" r="3.4" fill="#9aa0a8"/><circle cx="14" cy="57" r="3.4" fill="#9aa0a8"/><circle cx="35.5" cy="57" r="3.4" fill="#9aa0a8"/><circle cx="57" cy="57" r="3.4" fill="#9aa0a8"/><circle cx="78.5" cy="57" r="3.4" fill="#9aa0a8"/><circle cx="100" cy="57" r="3.4" fill="#9aa0a8"/><circle cx="121.5" cy="57" r="3.4" fill="#9aa0a8"/><circle cx="143" cy="57" r="3.4" fill="#9aa0a8"/><circle cx="164.5" cy="57" r="3.4" fill="#9aa0a8"/><circle cx="186" cy="57" r="3.4" fill="#9aa0a8"/><circle cx="207.5" cy="57" r="3.4" fill="#9aa0a8"/><circle cx="14" cy="72" r="3.4" fill="#9aa0a8"/><circle cx="35.5" cy="72" r="3.4" fill="#9aa0a8"/><circle cx="57" cy="72" r="3.4" fill="#9aa0a8"/><circle cx="78.5" cy="72" r="3.4" fill="#9aa0a8"/><circle cx="100" cy="72" r="3.4" fill="#9aa0a8"/><circle cx="121.5" cy="72" r="3.4" fill="#9aa0a8"/><circle cx="143" cy="72" r="3.4" fill="#9aa0a8"/><circle cx="164.5" cy="72" r="3.4" fill="#9aa0a8"/><circle cx="186" cy="72" r="3.4" fill="#9aa0a8"/><circle cx="207.5" cy="72" r="3.4" fill="#9aa0a8"/><circle cx="14" cy="87" r="3.4" fill="#9aa0a8"/><circle cx="35.5" cy="87" r="3.4" fill="#9aa0a8"/><circle cx="57" cy="87" r="3.4" fill="#9aa0a8"/><circle cx="78.5" cy="87" r="3.4" fill="#9aa0a8"/><circle cx="100" cy="87" r="3.4" fill="#9aa0a8"/><circle cx="121.5" cy="87" r="3.4" fill="#9aa0a8"/><circle cx="143" cy="87" r="3.4" fill="#9aa0a8"/><circle cx="164.5" cy="87" r="3.4" fill="#9aa0a8"/><circle cx="186" cy="87" r="3.4" fill="#9aa0a8"/><circle cx="207.5" cy="87" r="3.4" fill="#9aa0a8"/><circle cx="14" cy="102" r="3.4" fill="#9aa0a8"/><circle cx="35.5" cy="102" r="3.4" fill="#9aa0a8"/><circle cx="57" cy="102" r="3.4" fill="#9aa0a8"/><circle cx="78.5" cy="102" r="3.4" fill="#9aa0a8"/><circle cx="100" cy="102" r="3.4" fill="#9aa0a8"/><circle cx="121.5" cy="102" r="3.4" fill="#9aa0a8"/><circle cx="143" cy="102" r="3.4" fill="#9aa0a8"/><circle cx="164.5" cy="102" r="3.4" fill="#9aa0a8"/><circle cx="186" cy="102" r="3.4" fill="#9aa0a8"/><circle cx="207.5" cy="102" r="3.4" fill="#9aa0a8"/><circle cx="14" cy="117" r="3.4" fill="#9aa0a8"/><circle cx="35.5" cy="117" r="3.4" fill="#9aa0a8"/><circle cx="57" cy="117" r="3.4" fill="#9aa0a8"/><circle cx="78.5" cy="117" r="3.4" fill="#9aa0a8"/><circle cx="100" cy="117" r="3.4" fill="#9aa0a8"/><circle cx="121.5" cy="117" r="3.4" fill="#9aa0a8"/><circle cx="143" cy="117" r="3.4" fill="#9aa0a8"/><circle cx="164.5" cy="117" r="3.4" fill="#9aa0a8"/><circle cx="186" cy="117" r="3.4" fill="#9aa0a8"/><circle cx="207.5" cy="117" r="3.4" fill="#9aa0a8"/><circle cx="14" cy="132" r="3.4" fill="#9aa0a8"/><circle cx="35.5" cy="132" r="3.4" fill="#9aa0a8"/><circle cx="57" cy="132" r="3.4" fill="#9aa0a8"/><circle cx="78.5" cy="132" r="3.4" fill="#9aa0a8"/><circle cx="100" cy="132" r="3.4" fill="#9aa0a8"/><circle cx="121.5" cy="132" r="3.4" fill="#9aa0a8"/><circle cx="143" cy="132" r="3.4" fill="#9aa0a8"/><circle cx="164.5" cy="132" r="3.4" fill="#9aa0a8"/><circle cx="186" cy="132" r="3.4" fill="#9aa0a8"/><circle cx="207.5" cy="132" r="3.4" fill="#9aa0a8"/><circle cx="14" cy="147" r="3.4" fill="#9aa0a8"/><circle cx="35.5" cy="147" r="3.4" fill="#9aa0a8"/><circle cx="57" cy="147" r="3.4" fill="#9aa0a8"/><circle cx="78.5" cy="147" r="3.4" fill="#9aa0a8"/><circle cx="100" cy="147" r="3.4" fill="#9aa0a8"/><circle cx="121.5" cy="147" r="3.4" fill="#9aa0a8"/><circle cx="143" cy="147" r="3.4" fill="#9aa0a8"/><circle cx="164.5" cy="147" r="3.4" fill="#9aa0a8"/><circle cx="186" cy="147" r="3.4" fill="#9aa0a8"/><circle cx="207.5" cy="147" r="3.4" fill="#9aa0a8"/></svg></div>
+  <div class="cap">100 dots — every dot ≈ 10 voters. Your own dot is marked “you”.</div>
+</div>
+
+<div class="cell">
+  <div class="panel"><div class="knum">2</div><div class="ft">Voters gather</div><svg width="240" height="228" viewBox="0 0 240 228"><text x="4" y="14" font-size="9.5" font-weight="600" fill="#14161a">Gryffindor · 400 votes</text><circle cx="12" cy="24" r="3.4" fill="#8c1c13"/><circle cx="22.4" cy="24" r="3.4" fill="#8c1c13"/><circle cx="32.8" cy="24" r="3.4" fill="#8c1c13"/><circle cx="43.2" cy="24" r="3.4" fill="#8c1c13"/><circle cx="53.6" cy="24" r="3.4" fill="#8c1c13"/><circle cx="64" cy="24" r="3.4" fill="#8c1c13"/><circle cx="74.4" cy="24" r="3.4" fill="#8c1c13"/><circle cx="84.8" cy="24" r="3.4" fill="#8c1c13"/><circle cx="95.2" cy="24" r="3.4" fill="#8c1c13"/><circle cx="105.60000000000001" cy="24" r="3.4" fill="#8c1c13"/><circle cx="116" cy="24" r="3.4" fill="#8c1c13"/><circle cx="126.4" cy="24" r="3.4" fill="#8c1c13"/><circle cx="136.8" cy="24" r="3.4" fill="#8c1c13"/><circle cx="147.20000000000002" cy="24" r="3.4" fill="#8c1c13"/><circle cx="157.6" cy="24" r="3.4" fill="#8c1c13"/><circle cx="168" cy="24" r="3.4" fill="#8c1c13"/><circle cx="178.4" cy="24" r="3.4" fill="#8c1c13"/><circle cx="188.8" cy="24" r="3.4" fill="#8c1c13"/><circle cx="199.20000000000002" cy="24" r="3.4" fill="#8c1c13"/><circle cx="209.6" cy="24" r="3.4" fill="#8c1c13"/><circle cx="12" cy="44" r="3.4" fill="#8c1c13"/><circle cx="22.4" cy="44" r="3.4" fill="#8c1c13"/><circle cx="32.8" cy="44" r="3.4" fill="#8c1c13"/><circle cx="43.2" cy="44" r="3.4" fill="#8c1c13"/><circle cx="53.6" cy="44" r="3.4" fill="#8c1c13"/><circle cx="64" cy="44" r="3.4" fill="#8c1c13"/><circle cx="74.4" cy="44" r="3.4" fill="#8c1c13"/><circle cx="84.8" cy="44" r="3.4" fill="#8c1c13"/><circle cx="95.2" cy="44" r="3.4" fill="#8c1c13"/><circle cx="105.60000000000001" cy="44" r="3.4" fill="#8c1c13"/><circle cx="116" cy="44" r="3.4" fill="#8c1c13"/><circle cx="126.4" cy="44" r="3.4" fill="#8c1c13"/><circle cx="136.8" cy="44" r="3.4" fill="#8c1c13"/><circle cx="147.20000000000002" cy="44" r="3.4" fill="#8c1c13"/><circle cx="157.6" cy="44" r="3.4" fill="#8c1c13"/><circle cx="168" cy="44" r="3.4" fill="#8c1c13"/><circle cx="178.4" cy="44" r="3.4" fill="#8c1c13"/><circle cx="188.8" cy="44" r="3.4" fill="#8c1c13"/><circle cx="199.20000000000002" cy="44" r="3.4" fill="#8c1c13"/><circle cx="209.6" cy="44" r="3.4" fill="#8c1c13"/><text x="4" y="72" font-size="9.5" font-weight="600" fill="#14161a">Slytherin · 250 votes</text><circle cx="12" cy="82" r="3.4" fill="#1b5e3f"/><circle cx="22.4" cy="82" r="3.4" fill="#1b5e3f"/><circle cx="32.8" cy="82" r="3.4" fill="#1b5e3f"/><circle cx="43.2" cy="82" r="3.4" fill="#1b5e3f"/><circle cx="53.6" cy="82" r="3.4" fill="#1b5e3f"/><circle cx="64" cy="82" r="3.4" fill="#1b5e3f"/><circle cx="74.4" cy="82" r="3.4" fill="#1b5e3f"/><circle cx="84.8" cy="82" r="3.4" fill="#1b5e3f"/><circle cx="95.2" cy="82" r="3.4" fill="#1b5e3f"/><circle cx="105.60000000000001" cy="82" r="3.4" fill="#1b5e3f"/><circle cx="116" cy="82" r="3.4" fill="#1b5e3f"/><circle cx="126.4" cy="82" r="3.4" fill="#1b5e3f"/><circle cx="136.8" cy="82" r="3.4" fill="#1b5e3f"/><circle cx="147.20000000000002" cy="82" r="3.4" fill="#1b5e3f"/><circle cx="157.6" cy="82" r="3.4" fill="#1b5e3f"/><circle cx="168" cy="82" r="3.4" fill="#1b5e3f"/><circle cx="178.4" cy="82" r="3.4" fill="#1b5e3f"/><circle cx="188.8" cy="82" r="3.4" fill="#1b5e3f"/><circle cx="199.20000000000002" cy="82" r="3.4" fill="#1b5e3f"/><circle cx="209.6" cy="82" r="3.4" fill="#1b5e3f"/><circle cx="12" cy="102" r="3.4" fill="#1b5e3f"/><circle cx="22.4" cy="102" r="3.4" fill="#1b5e3f"/><circle cx="32.8" cy="102" r="3.4" fill="#1b5e3f"/><circle cx="43.2" cy="102" r="3.4" fill="#1b5e3f"/><circle cx="53.6" cy="102" r="3.4" fill="#1b5e3f"/><text x="4" y="130" font-size="9.5" font-weight="600" fill="#14161a">Ravenclaw · 230 votes</text><circle cx="12" cy="140" r="3.4" fill="#1e3a8a"/><circle cx="22.4" cy="140" r="3.4" fill="#1e3a8a"/><circle cx="32.8" cy="140" r="3.4" fill="#1e3a8a"/><circle cx="43.2" cy="140" r="3.4" fill="#1e3a8a"/><circle cx="53.6" cy="140" r="3.4" fill="#1e3a8a"/><circle cx="64" cy="140" r="3.4" fill="#1e3a8a"/><circle cx="74.4" cy="140" r="3.4" fill="#1e3a8a"/><circle cx="84.8" cy="140" r="3.4" fill="#1e3a8a"/><circle cx="95.2" cy="140" r="3.4" fill="#1e3a8a"/><circle cx="105.60000000000001" cy="140" r="3.4" fill="#1e3a8a"/><circle cx="116" cy="140" r="3.4" fill="#1e3a8a"/><circle cx="126.4" cy="140" r="3.4" fill="#1e3a8a"/><circle cx="136.8" cy="140" r="3.4" fill="#1e3a8a"/><circle cx="147.20000000000002" cy="140" r="3.4" fill="#1e3a8a"/><circle cx="157.6" cy="140" r="3.4" fill="#1e3a8a"/><circle cx="168" cy="140" r="3.4" fill="#1e3a8a"/><circle cx="178.4" cy="140" r="3.4" fill="#1e3a8a"/><circle cx="188.8" cy="140" r="3.4" fill="#1e3a8a"/><circle cx="199.20000000000002" cy="140" r="3.4" fill="#1e3a8a"/><circle cx="209.6" cy="140" r="3.4" fill="#1e3a8a"/><circle cx="12" cy="160" r="3.4" fill="#1e3a8a"/><circle cx="22.4" cy="160" r="3.4" fill="#1e3a8a"/><circle cx="32.8" cy="160" r="3.4" fill="#1e3a8a"/><text x="4" y="188" font-size="9.5" font-weight="600" fill="#14161a">Hufflepuff · 120 votes</text><circle cx="12" cy="198" r="3.4" fill="#8a6100"/><circle cx="22.4" cy="198" r="3.4" fill="#8a6100"/><circle cx="32.8" cy="198" r="3.4" fill="#8a6100"/><circle cx="43.2" cy="198" r="3.4" fill="#8a6100"/><circle cx="53.6" cy="198" r="3.4" fill="#8a6100"/><circle cx="64" cy="198" r="3.4" fill="#8a6100"/><circle cx="74.4" cy="198" r="3.4" fill="#8a6100"/><circle cx="84.8" cy="198" r="3.4" fill="#8a6100"/><circle cx="95.2" cy="198" r="3.4" fill="#8a6100"/><circle cx="105.60000000000001" cy="198" r="3.4" fill="#8a6100"/><circle cx="116" cy="198" r="3.4" fill="#8a6100"/><circle cx="126.4" cy="198" r="3.4" fill="#8a6100"/></svg></div>
+  <div class="cap">Each dot walks to its team. Gryffindor draws 40 of the 100.</div>
+</div>
+
+<div class="cell">
+  <div class="panel"><div class="knum">3</div><div class="ft">Benches become seats</div><svg width="240" height="228" viewBox="0 0 240 228"><text x="4" y="14" font-size="9.5" font-weight="600" fill="#14161a">Gryffindor · 400 votes</text><rect x="4" y="16" width="212" height="16" rx="8" fill="none" stroke="#8c1c13" stroke-width="1.3" /><circle cx="12" cy="24" r="3.4" fill="#8c1c13"/><circle cx="22.4" cy="24" r="3.4" fill="#8c1c13"/><circle cx="32.8" cy="24" r="3.4" fill="#8c1c13"/><circle cx="43.2" cy="24" r="3.4" fill="#8c1c13"/><circle cx="53.6" cy="24" r="3.4" fill="#8c1c13"/><circle cx="64" cy="24" r="3.4" fill="#8c1c13"/><circle cx="74.4" cy="24" r="3.4" fill="#8c1c13"/><circle cx="84.8" cy="24" r="3.4" fill="#8c1c13"/><circle cx="95.2" cy="24" r="3.4" fill="#8c1c13"/><circle cx="105.60000000000001" cy="24" r="3.4" fill="#8c1c13"/><circle cx="116" cy="24" r="3.4" fill="#8c1c13"/><circle cx="126.4" cy="24" r="3.4" fill="#8c1c13"/><circle cx="136.8" cy="24" r="3.4" fill="#8c1c13"/><circle cx="147.20000000000002" cy="24" r="3.4" fill="#8c1c13"/><circle cx="157.6" cy="24" r="3.4" fill="#8c1c13"/><circle cx="168" cy="24" r="3.4" fill="#8c1c13"/><circle cx="178.4" cy="24" r="3.4" fill="#8c1c13"/><circle cx="188.8" cy="24" r="3.4" fill="#8c1c13"/><circle cx="199.20000000000002" cy="24" r="3.4" fill="#8c1c13"/><circle cx="209.6" cy="24" r="3.4" fill="#8c1c13"/><rect x="222" y="16" width="16" height="16" rx="4" fill="#8c1c13"/><text x="230" y="28" text-anchor="middle" font-size="11" fill="#fff" font-weight="700">✓</text><rect x="4" y="36" width="212" height="16" rx="8" fill="none" stroke="#8c1c13" stroke-width="1.3" /><circle cx="12" cy="44" r="3.4" fill="#8c1c13"/><circle cx="22.4" cy="44" r="3.4" fill="#8c1c13"/><circle cx="32.8" cy="44" r="3.4" fill="#8c1c13"/><circle cx="43.2" cy="44" r="3.4" fill="#8c1c13"/><circle cx="53.6" cy="44" r="3.4" fill="#8c1c13"/><circle cx="64" cy="44" r="3.4" fill="#8c1c13"/><circle cx="74.4" cy="44" r="3.4" fill="#8c1c13"/><circle cx="84.8" cy="44" r="3.4" fill="#8c1c13"/><circle cx="95.2" cy="44" r="3.4" fill="#8c1c13"/><circle cx="105.60000000000001" cy="44" r="3.4" fill="#8c1c13"/><circle cx="116" cy="44" r="3.4" fill="#8c1c13"/><circle cx="126.4" cy="44" r="3.4" fill="#8c1c13"/><circle cx="136.8" cy="44" r="3.4" fill="#8c1c13"/><circle cx="147.20000000000002" cy="44" r="3.4" fill="#8c1c13"/><circle cx="157.6" cy="44" r="3.4" fill="#8c1c13"/><circle cx="168" cy="44" r="3.4" fill="#8c1c13"/><circle cx="178.4" cy="44" r="3.4" fill="#8c1c13"/><circle cx="188.8" cy="44" r="3.4" fill="#8c1c13"/><circle cx="199.20000000000002" cy="44" r="3.4" fill="#8c1c13"/><circle cx="209.6" cy="44" r="3.4" fill="#8c1c13"/><rect x="222" y="36" width="16" height="16" rx="4" fill="#8c1c13"/><text x="230" y="48" text-anchor="middle" font-size="11" fill="#fff" font-weight="700">✓</text><text x="4" y="72" font-size="9.5" font-weight="600" fill="#14161a">Slytherin · 250 votes</text><rect x="4" y="74" width="212" height="16" rx="8" fill="none" stroke="#1b5e3f" stroke-width="1.3" /><circle cx="12" cy="82" r="3.4" fill="#1b5e3f"/><circle cx="22.4" cy="82" r="3.4" fill="#1b5e3f"/><circle cx="32.8" cy="82" r="3.4" fill="#1b5e3f"/><circle cx="43.2" cy="82" r="3.4" fill="#1b5e3f"/><circle cx="53.6" cy="82" r="3.4" fill="#1b5e3f"/><circle cx="64" cy="82" r="3.4" fill="#1b5e3f"/><circle cx="74.4" cy="82" r="3.4" fill="#1b5e3f"/><circle cx="84.8" cy="82" r="3.4" fill="#1b5e3f"/><circle cx="95.2" cy="82" r="3.4" fill="#1b5e3f"/><circle cx="105.60000000000001" cy="82" r="3.4" fill="#1b5e3f"/><circle cx="116" cy="82" r="3.4" fill="#1b5e3f"/><circle cx="126.4" cy="82" r="3.4" fill="#1b5e3f"/><circle cx="136.8" cy="82" r="3.4" fill="#1b5e3f"/><circle cx="147.20000000000002" cy="82" r="3.4" fill="#1b5e3f"/><circle cx="157.6" cy="82" r="3.4" fill="#1b5e3f"/><circle cx="168" cy="82" r="3.4" fill="#1b5e3f"/><circle cx="178.4" cy="82" r="3.4" fill="#1b5e3f"/><circle cx="188.8" cy="82" r="3.4" fill="#1b5e3f"/><circle cx="199.20000000000002" cy="82" r="3.4" fill="#1b5e3f"/><circle cx="209.6" cy="82" r="3.4" fill="#1b5e3f"/><rect x="222" y="74" width="16" height="16" rx="4" fill="#1b5e3f"/><text x="230" y="86" text-anchor="middle" font-size="11" fill="#fff" font-weight="700">✓</text><rect x="4" y="94" width="212" height="16" rx="8" fill="none" stroke="#1b5e3f" stroke-width="1.3" stroke-dasharray="4 3"/><circle cx="12" cy="102" r="3.4" fill="#1b5e3f"/><circle cx="22.4" cy="102" r="3.4" fill="#1b5e3f"/><circle cx="32.8" cy="102" r="3.4" fill="#1b5e3f"/><circle cx="43.2" cy="102" r="3.4" fill="#1b5e3f"/><circle cx="53.6" cy="102" r="3.4" fill="#1b5e3f"/><text x="72" y="105.5" font-size="8.5" fill="#5a6069">5 of 20</text><text x="4" y="130" font-size="9.5" font-weight="600" fill="#14161a">Ravenclaw · 230 votes</text><rect x="4" y="132" width="212" height="16" rx="8" fill="none" stroke="#1e3a8a" stroke-width="1.3" /><circle cx="12" cy="140" r="3.4" fill="#1e3a8a"/><circle cx="22.4" cy="140" r="3.4" fill="#1e3a8a"/><circle cx="32.8" cy="140" r="3.4" fill="#1e3a8a"/><circle cx="43.2" cy="140" r="3.4" fill="#1e3a8a"/><circle cx="53.6" cy="140" r="3.4" fill="#1e3a8a"/><circle cx="64" cy="140" r="3.4" fill="#1e3a8a"/><circle cx="74.4" cy="140" r="3.4" fill="#1e3a8a"/><circle cx="84.8" cy="140" r="3.4" fill="#1e3a8a"/><circle cx="95.2" cy="140" r="3.4" fill="#1e3a8a"/><circle cx="105.60000000000001" cy="140" r="3.4" fill="#1e3a8a"/><circle cx="116" cy="140" r="3.4" fill="#1e3a8a"/><circle cx="126.4" cy="140" r="3.4" fill="#1e3a8a"/><circle cx="136.8" cy="140" r="3.4" fill="#1e3a8a"/><circle cx="147.20000000000002" cy="140" r="3.4" fill="#1e3a8a"/><circle cx="157.6" cy="140" r="3.4" fill="#1e3a8a"/><circle cx="168" cy="140" r="3.4" fill="#1e3a8a"/><circle cx="178.4" cy="140" r="3.4" fill="#1e3a8a"/><circle cx="188.8" cy="140" r="3.4" fill="#1e3a8a"/><circle cx="199.20000000000002" cy="140" r="3.4" fill="#1e3a8a"/><circle cx="209.6" cy="140" r="3.4" fill="#1e3a8a"/><rect x="222" y="132" width="16" height="16" rx="4" fill="#1e3a8a"/><text x="230" y="144" text-anchor="middle" font-size="11" fill="#fff" font-weight="700">✓</text><rect x="4" y="152" width="212" height="16" rx="8" fill="none" stroke="#1e3a8a" stroke-width="1.3" stroke-dasharray="4 3"/><circle cx="12" cy="160" r="3.4" fill="#1e3a8a"/><circle cx="22.4" cy="160" r="3.4" fill="#1e3a8a"/><circle cx="32.8" cy="160" r="3.4" fill="#1e3a8a"/><text x="51.2" y="163.5" font-size="8.5" fill="#5a6069">3 of 20</text><text x="4" y="188" font-size="9.5" font-weight="600" fill="#14161a">Hufflepuff · 120 votes</text><rect x="4" y="190" width="212" height="16" rx="8" fill="none" stroke="#8a6100" stroke-width="1.3" stroke-dasharray="4 3"/><circle cx="12" cy="198" r="3.4" fill="#8a6100"/><circle cx="22.4" cy="198" r="3.4" fill="#8a6100"/><circle cx="32.8" cy="198" r="3.4" fill="#8a6100"/><circle cx="43.2" cy="198" r="3.4" fill="#8a6100"/><circle cx="53.6" cy="198" r="3.4" fill="#8a6100"/><circle cx="64" cy="198" r="3.4" fill="#8a6100"/><circle cx="74.4" cy="198" r="3.4" fill="#8a6100"/><circle cx="84.8" cy="198" r="3.4" fill="#8a6100"/><circle cx="95.2" cy="198" r="3.4" fill="#8a6100"/><circle cx="105.60000000000001" cy="198" r="3.4" fill="#8a6100"/><circle cx="116" cy="198" r="3.4" fill="#8a6100"/><circle cx="126.4" cy="198" r="3.4" fill="#8a6100"/><text x="144.8" y="201.5" font-size="8.5" fill="#5a6069">12 of 20</text></svg></div>
+  <div class="cap">A bench holds 20 dots (200 votes) — <b>every full bench elects one seat</b>: 2–1–1–0. That’s 4 seats. One is still empty, and three teams are left holding part-benches.</div>
+</div>
+
+<div class="cell">
+  <div class="panel"><div class="knum">4</div><div class="ft">The leftover seat</div><div class="lo-head">1 seat still empty · a full bench = 20</div><svg width="240" height="134" viewBox="0 0 240 134"><text x="4" y="14" font-size="9.5" fill="#5a6069">Gryffindor — nothing left over (both benches full)</text><text x="4" y="30" font-size="9.5" font-weight="600" fill="#14161a">Slytherin · 5 of 20</text><rect x="4" y="32" width="212" height="16" rx="8" fill="none" stroke="#1b5e3f" stroke-width="1.3" stroke-dasharray="4 3"/><circle cx="12" cy="40" r="3.4" fill="#1b5e3f"/><circle cx="22.4" cy="40" r="3.4" fill="#1b5e3f"/><circle cx="32.8" cy="40" r="3.4" fill="#1b5e3f"/><circle cx="43.2" cy="40" r="3.4" fill="#1b5e3f"/><circle cx="53.6" cy="40" r="3.4" fill="#1b5e3f"/><text x="4" y="64" font-size="9.5" font-weight="600" fill="#14161a">Ravenclaw · 3 of 20</text><rect x="4" y="66" width="212" height="16" rx="8" fill="none" stroke="#1e3a8a" stroke-width="1.3" stroke-dasharray="4 3"/><circle cx="12" cy="74" r="3.4" fill="#1e3a8a"/><circle cx="22.4" cy="74" r="3.4" fill="#1e3a8a"/><circle cx="32.8" cy="74" r="3.4" fill="#1e3a8a"/><text x="4" y="98" font-size="9.5" font-weight="600" fill="#14161a">Hufflepuff · 12 of 20</text><rect x="4" y="100" width="212" height="16" rx="8" fill="none" stroke="#8a6100" stroke-width="1.3" stroke-dasharray="4 3"/><circle cx="12" cy="108" r="3.4" fill="#8a6100"/><circle cx="22.4" cy="108" r="3.4" fill="#8a6100"/><circle cx="32.8" cy="108" r="3.4" fill="#8a6100"/><circle cx="43.2" cy="108" r="3.4" fill="#8a6100"/><circle cx="53.6" cy="108" r="3.4" fill="#8a6100"/><circle cx="64" cy="108" r="3.4" fill="#8a6100"/><circle cx="74.4" cy="108" r="3.4" fill="#8a6100"/><circle cx="84.8" cy="108" r="3.4" fill="#8a6100"/><circle cx="95.2" cy="108" r="3.4" fill="#8a6100"/><circle cx="105.60000000000001" cy="108" r="3.4" fill="#8a6100"/><circle cx="116" cy="108" r="3.4" fill="#8a6100"/><circle cx="126.4" cy="108" r="3.4" fill="#8a6100"/><rect x="222" y="100" width="16" height="16" rx="4" fill="#8a6100"/><text x="230" y="112" text-anchor="middle" font-size="11" fill="#fff" font-weight="700">+</text></svg></div>
+  <div class="cap">The part-benches get compared where they stand — no reshuffling. Hufflepuff’s 12 voters sit closest to a full bench — closer than Slytherin’s 5 or Ravenclaw’s 3 — so <b>Hufflepuff takes the empty seat</b>.</div>
+</div>
+
+<div class="cell">
+  <div class="panel"><div class="knum">5</div><div class="ft">Inside your team</div><svg width="222" height="172" viewBox="0 0 222 172"><circle cx="32" cy="150" r="3.3" fill="#8c1c13"/><circle cx="32" cy="142" r="3.3" fill="#8c1c13"/><circle cx="32" cy="134" r="3.3" fill="#8c1c13"/><circle cx="32" cy="126" r="3.3" fill="#8c1c13"/><circle cx="32" cy="118" r="3.3" fill="#8c1c13"/><circle cx="32" cy="110" r="3.3" fill="#8c1c13"/><circle cx="32" cy="102" r="3.3" fill="#8c1c13"/><circle cx="32" cy="94" r="3.3" fill="#8c1c13"/><circle cx="32" cy="86" r="3.3" fill="#8c1c13"/><text x="32" y="166" text-anchor="middle" font-size="8" fill="#14161a" font-weight="400">Harry</text><text x="32" y="76" text-anchor="middle" font-size="8.5" fill="#5a6069">90</text><circle cx="72" cy="150" r="3.3" fill="#8c1c13"/><circle cx="72" cy="142" r="3.3" fill="#8c1c13"/><circle cx="72" cy="134" r="3.3" fill="#8c1c13"/><circle cx="72" cy="126" r="3.3" fill="#8c1c13"/><circle cx="72" cy="118" r="3.3" fill="#8c1c13"/><circle cx="72" cy="110" r="3.3" fill="#8c1c13"/><circle cx="72" cy="102" r="3.3" fill="#8c1c13"/><circle cx="72" cy="94" r="3.3" fill="#8c1c13"/><circle cx="72" cy="86" r="3.3" fill="#8c1c13"/><circle cx="72" cy="78" r="3.3" fill="#8c1c13"/><circle cx="72" cy="70" r="3.3" fill="#8c1c13"/><circle cx="72" cy="62" r="3.3" fill="#8c1c13"/><circle cx="72" cy="54" r="3.3" fill="#8c1c13"/><circle cx="72" cy="46" r="3.3" fill="#8c1c13"/><circle cx="72" cy="38" r="3.3" fill="#8c1c13"/><text x="72" y="166" text-anchor="middle" font-size="8" fill="#14161a" font-weight="700">Hermione</text><text x="72" y="28" text-anchor="middle" font-size="8.5" fill="#5a6069">150</text><circle cx="112" cy="150" r="3.3" fill="#8c1c13"/><circle cx="112" cy="142" r="3.3" fill="#8c1c13"/><circle cx="112" cy="134" r="3.3" fill="#8c1c13"/><text x="112" y="166" text-anchor="middle" font-size="8" fill="#14161a" font-weight="400">Minerva</text><text x="112" y="124" text-anchor="middle" font-size="8.5" fill="#5a6069">30</text><circle cx="152" cy="150" r="3.3" fill="#8c1c13"/><circle cx="152" cy="142" r="3.3" fill="#8c1c13"/><text x="152" y="166" text-anchor="middle" font-size="8" fill="#14161a" font-weight="400">Neville</text><text x="152" y="132" text-anchor="middle" font-size="8.5" fill="#5a6069">20</text><circle cx="192" cy="150" r="3.3" fill="#8c1c13"/><circle cx="192" cy="142" r="3.3" fill="#8c1c13"/><circle cx="192" cy="134" r="3.3" fill="#8c1c13"/><circle cx="192" cy="126" r="3.3" fill="#8c1c13"/><circle cx="192" cy="118" r="3.3" fill="#8c1c13"/><circle cx="192" cy="110" r="3.3" fill="#8c1c13"/><circle cx="192" cy="102" r="3.3" fill="#8c1c13"/><circle cx="192" cy="94" r="3.3" fill="#8c1c13"/><circle cx="192" cy="86" r="3.3" fill="#8c1c13"/><circle cx="192" cy="78" r="3.3" fill="#8c1c13"/><circle cx="192" cy="70" r="3.3" fill="#8c1c13"/><text x="192" y="166" text-anchor="middle" font-size="8" fill="#14161a" font-weight="700">Ron</text><text x="192" y="60" text-anchor="middle" font-size="8.5" fill="#5a6069">110</text></svg></div>
+  <div class="cap">Gryffindor’s 40 dots regroup behind the person each voter actually picked — candidates in ballot order along the bottom.</div>
+</div>
+
+<div class="cell">
+  <div class="panel"><div class="knum">6</div><div class="ft">Tallest stacks sit</div><svg width="222" height="172" viewBox="0 0 222 172"><circle cx="32" cy="150" r="3.3" fill="#8c1c13"/><circle cx="32" cy="142" r="3.3" fill="#8c1c13"/><circle cx="32" cy="134" r="3.3" fill="#8c1c13"/><circle cx="32" cy="126" r="3.3" fill="#8c1c13"/><circle cx="32" cy="118" r="3.3" fill="#8c1c13"/><circle cx="32" cy="110" r="3.3" fill="#8c1c13"/><circle cx="32" cy="102" r="3.3" fill="#8c1c13"/><circle cx="32" cy="94" r="3.3" fill="#8c1c13"/><circle cx="32" cy="86" r="3.3" fill="#8c1c13"/><text x="32" y="166" text-anchor="middle" font-size="8" fill="#14161a" font-weight="400">Harry</text><text x="32" y="76" text-anchor="middle" font-size="8.5" fill="#5a6069">90</text><circle cx="72" cy="150" r="3.3" fill="#8c1c13"/><circle cx="72" cy="142" r="3.3" fill="#8c1c13"/><circle cx="72" cy="134" r="3.3" fill="#8c1c13"/><circle cx="72" cy="126" r="3.3" fill="#8c1c13"/><circle cx="72" cy="118" r="3.3" fill="#8c1c13"/><circle cx="72" cy="110" r="3.3" fill="#8c1c13"/><circle cx="72" cy="102" r="3.3" fill="#8c1c13"/><circle cx="72" cy="94" r="3.3" fill="#8c1c13"/><circle cx="72" cy="86" r="3.3" fill="#8c1c13"/><circle cx="72" cy="78" r="3.3" fill="#8c1c13"/><circle cx="72" cy="70" r="3.3" fill="#8c1c13"/><circle cx="72" cy="62" r="3.3" fill="#8c1c13"/><circle cx="72" cy="54" r="3.3" fill="#8c1c13"/><circle cx="72" cy="46" r="3.3" fill="#8c1c13"/><circle cx="72" cy="38" r="3.3" fill="#8c1c13"/><text x="72" y="166" text-anchor="middle" font-size="8" fill="#14161a" font-weight="700">Hermione</text><text x="72" y="28" text-anchor="middle" font-size="8.5" fill="#5a6069">150</text><rect x="63" y="4" width="18" height="18" rx="4" fill="#8c1c13"/><text x="72" y="17" text-anchor="middle" font-size="12" fill="#fff" font-weight="700">★</text><circle cx="112" cy="150" r="3.3" fill="#8c1c13"/><circle cx="112" cy="142" r="3.3" fill="#8c1c13"/><circle cx="112" cy="134" r="3.3" fill="#8c1c13"/><text x="112" y="166" text-anchor="middle" font-size="8" fill="#14161a" font-weight="400">Minerva</text><text x="112" y="124" text-anchor="middle" font-size="8.5" fill="#5a6069">30</text><circle cx="152" cy="150" r="3.3" fill="#8c1c13"/><circle cx="152" cy="142" r="3.3" fill="#8c1c13"/><text x="152" y="166" text-anchor="middle" font-size="8" fill="#14161a" font-weight="400">Neville</text><text x="152" y="132" text-anchor="middle" font-size="8.5" fill="#5a6069">20</text><circle cx="192" cy="150" r="3.3" fill="#8c1c13"/><circle cx="192" cy="142" r="3.3" fill="#8c1c13"/><circle cx="192" cy="134" r="3.3" fill="#8c1c13"/><circle cx="192" cy="126" r="3.3" fill="#8c1c13"/><circle cx="192" cy="118" r="3.3" fill="#8c1c13"/><circle cx="192" cy="110" r="3.3" fill="#8c1c13"/><circle cx="192" cy="102" r="3.3" fill="#8c1c13"/><circle cx="192" cy="94" r="3.3" fill="#8c1c13"/><circle cx="192" cy="86" r="3.3" fill="#8c1c13"/><circle cx="192" cy="78" r="3.3" fill="#8c1c13"/><circle cx="192" cy="70" r="3.3" fill="#8c1c13"/><text x="192" y="166" text-anchor="middle" font-size="8" fill="#14161a" font-weight="700">Ron</text><text x="192" y="60" text-anchor="middle" font-size="8.5" fill="#5a6069">110</text><rect x="183" y="36" width="18" height="18" rx="4" fill="#8c1c13"/><text x="192" y="49" text-anchor="middle" font-size="12" fill="#fff" font-weight="700">★</text></svg></div>
+  <div class="cap">The 2 seats land on the two tallest stacks: Hermione and Ron — <b>last on the ballot</b>, still seated. List order never mattered.</div>
+</div>
+
+<div class="cell">
+  <div class="panel"><div class="knum">7</div><div class="ft">Your vote</div>
+  <div class="pay" style="border-color:#8c1c13">You voted for <b>Neville Longbottom</b>. Neville didn’t win a seat — but your vote helped Gryffindor earn its 2, so it still elected Gryffindors.</div>
+  <div class="winchips">
+    <span style="border-color:#8c1c13">⚡ Hermione</span><span style="border-color:#8c1c13">⚡ Ron</span>
+    <span style="border-color:#1b5e3f">🐍 Severus</span><span style="border-color:#1e3a8a">🦅 Luna</span>
+    <span style="border-color:#8a6100">🦡 Cedric</span>
+  </div>
+  <div class="stat"><b>100% of voters</b> helped elect someone from their team.</div></div>
+  <div class="cap">Same ending: payoff, stat, winner-take-all on tap. Your dot glows inside the stack you helped build.</div>
+</div>
+</div>
+
+<h2>Side by side</h2>
+<table>
+<tr><th></th><th>A — seat price lines</th><th>B — hundred voters</th></tr>
+<tr><td><b>Teaches best</b></td><td>“20% of the vote = 1 seat” as geometry</td><td>“Your vote physically accumulates into a seat” — and the leftover seat becomes obvious (fullest part-bench)</td></tr>
+<tr><td><b>The leftover seat</b></td><td>A zoomed race: leftover votes vs the 200-vote price</td><td>Part-benches line up; the fullest one seats its team</td></tr>
+<tr><td><b>Feel</b></td><td>Clean, chart-like, calm</td><td>Alive; voters are people, one dot is <i>you</i></td></tr>
+<tr><td><b>Caveat</b></td><td>Percent-thinking still required; the leftover frame changes scale (caption must own it)</td><td>“≈10 voters per dot” rounding caption; 100 animated dots need care on old phones</td></tr>
+<tr><td><b>Build</b></td><td>~1×</td><td>~2× (dot choreography, but Motion’s layoutId does the heavy lifting)</td></tr>
+</table>
+
+<div class="rec"><b>My recommendation: Option B</b>, tap-to-advance. It’s the only version where “votes add up to seats” is literally what your eyes watch happen, and the leftover seat — the hardest rule to explain in words — becomes trivial: the fullest unfinished bench wins it. Option A is the right call if you want it shipped faster; its Act 2 is identical, and A can later be upgraded to B without redoing the math or copy.
+<br><br><b>Pacing:</b> in both, beats should advance on tap (“Next”), not on a timer — this is an explanation, and readers absorb at different speeds. Auto-play stays as a fallback after ~6s idle so the screen never feels stuck.</div>
+
+<h2>And yes — alphabetize the ballot</h2>
+<p class="sub">Your instinct is right, and it makes Act 2 land harder.</p>
+<div class="diag">Today the rosters are listed in fame order, so the winner is usually the top name and the “not the top of the list” moment almost never shows up. Alphabetical by first name makes the printed order <i>visibly arbitrary</i> — when Ron (5th) beats Harry (1st), the lesson tells itself. Implementation note: sort at display time only; the fame model behind the simulated electorate stays attached to the right people. (Fun alternative from real elections: Tasmania rotates candidate order per ballot — “Robson rotation” — but it makes screenshots inconsistent and Act 2 harder to narrate.)</div>
+<div class="abc">
+<div class="card"><div class="chead" style="background:#8c1c13">Today (fame order)</div><div class="crow">Harry Potter</div><div class="crow">Hermione Granger</div><div class="crow">Ron Weasley</div><div class="crow">Neville Longbottom</div><div class="crow">Minerva McGonagall</div></div>
+<div class="card"><div class="chead" style="background:#8c1c13">Proposed (A–Z first name)</div><div class="crow">Harry Potter</div><div class="crow">Hermione Granger</div><div class="crow">Minerva McGonagall</div><div class="crow">Neville Longbottom</div><div class="crow">Ron Weasley</div></div>
+</div>

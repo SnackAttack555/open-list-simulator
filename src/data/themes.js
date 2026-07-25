@@ -33,6 +33,8 @@ export const UNIVERSAL_THEMES = [
     id: 'hogwarts',
     name: 'Hogwarts Houses',
     emoji: '🏰',
+    noun: 'person',
+    nounPlural: 'people',
     tagline: 'Four houses',
     lists: [
       {
@@ -93,6 +95,8 @@ export const UNIVERSAL_THEMES = [
     id: 'starwars',
     name: 'Star Wars Factions',
     emoji: '🌌',
+    noun: 'person',
+    nounPlural: 'people',
     tagline: 'Five factions',
     lists: [
       {
@@ -154,6 +158,8 @@ export const UNIVERSAL_THEMES = [
     id: 'superheroes',
     name: 'Superheroes',
     emoji: '🦸',
+    noun: 'person',
+    nounPlural: 'people',
     tagline: 'Five teams',
     lists: [
       {
@@ -197,8 +203,9 @@ export const UNIVERSAL_THEMES = [
     id: 'animation',
     name: 'Animated Movies',
     emoji: '🎬',
+    noun: 'movie',
+    nounPlural: 'movies',
     tagline: 'Five studios',
-    noun: 'movie', // ballot header reads "Vote for one movie."; default is 'person'
     lists: [
       {
         id: 'disney',
@@ -265,8 +272,9 @@ export const UNIVERSAL_THEMES = [
     id: 'animals',
     name: 'Famous Animals',
     emoji: '🐾',
-    tagline: 'Four teams',
     noun: 'animal',
+    nounPlural: 'animals',
+    tagline: 'Four teams',
     lists: [
       {
         id: 'cats',
