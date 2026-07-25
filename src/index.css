@@ -1,0 +1,50 @@
+@import 'tailwindcss';
+
+:root {
+  /* Neutral, unbranded. v1 is deliberately plain. */
+  --ink: #14161a;
+  --ink-soft: #5a6069;
+  --paper: #f7f7f5;
+  --card: #ffffff;
+  --line: #d9dade;
+  --accent: #2f4858;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family:
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  /* The ballot carousel scrolls horizontally; the page must never rubber-band sideways. */
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Hide scrollbars on the carousel without losing scrollability. */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Anything time-based must yield to the OS setting. Motion respects this via
+   useReducedMotion; this covers the plain CSS transitions too. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
