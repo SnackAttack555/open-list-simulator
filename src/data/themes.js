@@ -198,6 +198,7 @@ export const UNIVERSAL_THEMES = [
     name: 'Animated Movies',
     emoji: '🎬',
     tagline: 'Five studios',
+    noun: 'movie', // ballot header reads "Vote for one movie."; default is 'person'
     lists: [
       {
         id: 'disney',
@@ -265,6 +266,7 @@ export const UNIVERSAL_THEMES = [
     name: 'Famous Animals',
     emoji: '🐾',
     tagline: 'Four teams',
+    noun: 'animal',
     lists: [
       {
         id: 'cats',

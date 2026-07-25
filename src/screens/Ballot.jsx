@@ -54,12 +54,19 @@ export default function Ballot({ theme, selection, onSelect, onCast, onBack }) {
     let frame = 0
     const measure = () => {
       frame = 0
-      const mid = scroller.scrollLeft + scroller.clientWidth / 2
+      // Compare viewport rects, never offsetLeft against scrollLeft: offsetLeft
+      // is measured from the offset parent (the body), so once the app column
+      // is centered on a wide window it carries the centering margin and every
+      // chip lights one card to the left. Invisible at phone width, where the
+      // margin is zero.
+      const scrollerRect = scroller.getBoundingClientRect()
+      const mid = scrollerRect.left + scrollerRect.width / 2
       let best = 0
       let bestDist = Infinity
       cardRefs.current.forEach((el, i) => {
         if (!el) return
-        const dist = Math.abs(el.offsetLeft + el.offsetWidth / 2 - mid)
+        const rect = el.getBoundingClientRect()
+        const dist = Math.abs(rect.left + rect.width / 2 - mid)
         if (dist < bestDist) {
           bestDist = dist
           best = i
@@ -143,7 +150,7 @@ export default function Ballot({ theme, selection, onSelect, onCast, onBack }) {
         </button>
         <h1 className="mt-1 text-2xl font-semibold tracking-tight">{theme.name}</h1>
         <p className="mt-1 text-sm text-[var(--ink-soft)]">
-          Pick your one favorite. {theme.lists.length} lists, 5 seats.
+          Vote for one {theme.noun ?? 'person'}.
         </p>
       </header>
 
