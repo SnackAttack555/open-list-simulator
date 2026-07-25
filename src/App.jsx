@@ -58,17 +58,19 @@ export default function App() {
   const handleCast = useCallback(async () => {
     setScreen('ease')
     try {
-      const [voted] = await Promise.all([
-        castVote({
-          themeId,
-          listId: selection.listId,
-          candidateId: selection.candidateId,
-          regionId: REGION,
-        }),
-        // Prefetch while the ease question is on screen so results feel instant.
-        fetchResults(themeId, REGION).then(setResults),
-      ])
+      // Strictly sequential. Fetching the tally concurrently with the insert lets
+      // the read land first, so the voter's own ballot is missing from their own
+      // results — and the payoff line ("your vote elected X") gets computed
+      // without the vote it is describing. Both requests still happen while the
+      // ease question is on screen, so this costs nothing the reader can feel.
+      const voted = await castVote({
+        themeId,
+        listId: selection.listId,
+        candidateId: selection.candidateId,
+        regionId: REGION,
+      })
       setVoteToken(voted?.token ?? null)
+      setResults(await fetchResults(themeId, REGION))
     } catch (err) {
       console.error(err)
       setError('We could not reach the vote server, so this ballot may not have counted.')

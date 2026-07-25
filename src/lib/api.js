@@ -82,14 +82,25 @@ export async function fetchThemeCounts(regionId) {
   }
 }
 
-/** @returns {Promise<{token: string|null}>} token is needed to attach an ease answer. */
+/**
+ * @returns {Promise<{token: string|null}>} token is needed to attach an ease answer.
+ *
+ * The local "already voted" record is written only once the server has actually
+ * answered. Writing it first would burn someone's vote on a dropped request:
+ * locked out of voting again, on a ballot that never reached the database. A
+ * server response — including a silent over-cap one — does mean this device has
+ * had its turn.
+ */
 export async function castVote({ themeId, listId, candidateId, regionId }) {
-  rememberVote(themeId, listId, candidateId)
   try {
-    return await postJson('api/vote', { themeId, listId, candidateId })
+    const result = await postJson('api/vote', { themeId, listId, candidateId })
+    rememberVote(themeId, listId, candidateId)
+    return result
   } catch (err) {
     if (!isDev) throw err
-    return mockCastVote({ themeId, listId, candidateId, regionId })
+    const result = mockCastVote({ themeId, listId, candidateId, regionId })
+    rememberVote(themeId, listId, candidateId)
+    return result
   }
 }
 
