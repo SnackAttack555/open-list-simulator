@@ -1,4 +1,4 @@
-/** Helpers shared by the Pages Functions. */
+/** Helpers shared by the API handlers. */
 
 export const json = (data, status = 200) =>
   new Response(JSON.stringify(data), {
@@ -15,9 +15,9 @@ export const badRequest = (message) => json({ error: message }, 400)
 /**
  * Salted SHA-256 of the caller's IP. The raw address is never written anywhere.
  *
- * VOTE_SALT must be set as a Pages secret. Without it we fall back to a constant,
- * which still avoids storing raw IPs but makes the hashes guessable across
- * deployments — so the function warns rather than failing shut, since blocking
+ * VOTE_SALT must be set as a Worker secret. Without it we fall back to a
+ * constant, which still avoids storing raw IPs but makes the hashes guessable
+ * across deployments — so this warns rather than failing shut, since blocking
  * every vote over a missing env var would be worse than a weak salt.
  */
 export async function hashIp(request, env) {

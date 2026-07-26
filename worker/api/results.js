@@ -1,4 +1,4 @@
-import { json } from '../../_shared.js'
+import { json } from '../shared.js'
 
 /**
  * Tallies for one theme.
@@ -6,9 +6,7 @@ import { json } from '../../_shared.js'
  * Seed and real votes are counted together — they're all votes — and reported
  * separately alongside so the results screen can state the split honestly.
  */
-export async function onRequestGet({ params, env }) {
-  const themeId = params.theme
-
+export async function themeResults(_request, env, themeId) {
   const [tallies, totals, ease] = await env.DB.batch([
     env.DB.prepare(
       `SELECT list_id AS listId, candidate_id AS candidateId, COUNT(*) AS votes

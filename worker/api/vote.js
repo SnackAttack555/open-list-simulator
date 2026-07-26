@@ -1,4 +1,4 @@
-import { badRequest, hashIp, json, readJson } from '../_shared.js'
+import { badRequest, hashIp, json, readJson } from '../shared.js'
 import { VOTE_CAP_PER_IP } from '../../src/config.js'
 import { getThemes } from '../../src/data/index.js'
 import { REGIONS } from '../../src/data/regions.js'
@@ -25,7 +25,7 @@ function isRealCandidate(themeId, listId, candidateId) {
   return validTriples.has(`${themeId}/${listId}/${candidateId}`)
 }
 
-export async function onRequestPost({ request, env }) {
+export async function castVote(request, env) {
   const body = await readJson(request)
   if (!body) return badRequest('Expected a JSON body')
 

@@ -1,13 +1,25 @@
 name = "open-list-simulator"
-pages_build_output_dir = "dist"
+main = "worker/index.js"
 compatibility_date = "2025-06-01"
+workers_dev = true
 
-# Cloudflare D1.
+# A Worker serving static assets, not a Pages project.
 #
-# database_id below is the real id, from `npx wrangler d1 create ols-votes`. Local D1
-# never checks it against Cloudflare — it only needs `npm run db:reset` and
-# `npm run preview:full` to agree on which local SQLite file to use — but the remote
-# commands do, so it has to be the real one.
+# Cloudflare's git builds run `npx wrangler deploy`, which is the Workers deploy.
+# The old Pages config (pages_build_output_dir) made that command fail with
+# "Missing entry-point to Worker script or to assets directory", because a Pages
+# project has neither a main script nor an assets directory. This shape is what
+# the platform runs by default, so the repo and the build agree.
+#
+# Requests matching a built file are served straight from the assets binding;
+# everything else reaches worker/index.js, which answers /api/* and hands the
+# rest back to ASSETS.
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+
+# Cloudflare D1. database_id is the real one from `wrangler d1 create ols-votes`;
+# the remote commands check it, and local runs only need it to be consistent.
 #
 # Apply the schema and seed, locally and remotely:
 #   npx wrangler d1 execute ols-votes --local  --file=./schema.sql
@@ -16,7 +28,7 @@ compatibility_date = "2025-06-01"
 #   npx wrangler d1 execute ols-votes --remote --file=./seed.sql
 #
 # And set the IP-hash salt as a secret (never commit it):
-#   npx wrangler pages secret put VOTE_SALT
+#   npx wrangler secret put VOTE_SALT
 [[d1_databases]]
 binding = "DB"
 database_name = "ols-votes"

@@ -20,11 +20,11 @@ generates the same synthetic electorate the real seed uses. The fallback is gate
 `import.meta.env.DEV`, so a production outage surfaces as an error rather than quietly
 showing invented numbers.
 
-To run against real Cloudflare Functions and a local D1 database:
+To run the real Worker and a local D1 database:
 
 ```bash
 npm run db:reset     # generate seed.sql, apply schema + seed to local D1
-npm run preview:full # build, then serve via wrangler with the D1 binding
+npm run preview:full # build, then serve the real Worker + D1 locally
 ```
 
 ```bash
@@ -93,7 +93,7 @@ touched.
 
 ## Data and abuse control
 
-Votes go through a Pages Function, not straight from the browser, so no database
+Votes go through the Worker, not straight from the browser, so no database
 credential ships in the page.
 
 - The `(theme, list, candidate)` triple must exist. Posting a real name on the wrong
@@ -113,27 +113,32 @@ credential ships in the page.
 
 ## Deploying
 
-Needs a free Cloudflare account. Once:
+**Pushing to `main` deploys.** The Cloudflare Worker is connected to this repo and runs
+`npm run build` then `npx wrangler deploy` on every push. Nothing else to do.
+
+This is a Worker serving static assets, not a Pages project — see the note in
+`wrangler.toml`. That matters because Cloudflare's git builds run `wrangler deploy`, and
+against the old Pages config that command failed outright.
+
+To deploy by hand, or from a fresh account:
 
 ```bash
 npx wrangler login
-npx wrangler d1 create ols-votes          # paste the returned id into wrangler.toml
-npx wrangler pages secret put VOTE_SALT   # any long random string
-npm run db:deploy                         # schema + seed against the remote database
-npx wrangler pages deploy dist
+npx wrangler d1 create ols-votes     # paste the returned id into wrangler.toml
+npx wrangler secret put VOTE_SALT    # any long random string
+npm run db:deploy                    # schema + seed against the remote database
+npm run deploy                       # build + wrangler deploy
 ```
 
-`wrangler.toml` ships with a placeholder `database_id` so the local commands agree on
-one SQLite file. **Replace it with the real id before deploying.**
+`VOTE_SALT` is a Worker secret, so it lives only in Cloudflare and never in the repo.
+Without it the API still runs and still never stores raw IPs, but it logs a warning and
+the hashes become guessable.
 
-For `mi-sim.representation.vote`: add the custom domain in the Cloudflare Pages
-dashboard, then one CNAME record at Namecheap. No DNS migration.
-
-A path like `representation.vote/mi-sim` is *not* reachable from Namecheap DNS — a path
-has to be served by whatever already serves the apex domain. That would mean moving the
-domain's nameservers to Cloudflare, which is free and reversible but worth doing
-deliberately as its own task. The app hardcodes no absolute URLs and no base path, so
-either choice works later with no code change.
+For a custom domain, add it under the Worker's **Domains** tab, then point one CNAME at
+it. A path like `representation.vote/mi-sim` is *not* reachable from Namecheap DNS — a
+path has to be served by whatever already serves the apex domain, which would mean
+moving the domain's nameservers to Cloudflare. The app hardcodes no absolute URLs and no
+base path, so either choice works later with no code change.
 
 ## Content and rights
 
