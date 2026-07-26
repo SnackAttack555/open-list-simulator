@@ -1,80 +1,90 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
 import { ballotOrder } from '../data/index.js'
 
 /**
  * The results explained, one tap at a time.
  *
- * This is not decoration. It exists to carry exactly one argument, in the order
- * a person actually asks the questions:
+ * This is not decoration. It carries one argument, in the order a person
+ * actually asks the questions:
  *
  *   1. How many votes were there?
- *   2. Where did they go?                    -> every vote joins a team
- *   3. How do votes become seats?            -> each group of QUOTA votes wins one
- *   4. What about the votes left over?       -> the biggest leftover takes the last seat
- *   5. Who fills my team's seats?            -> the most personal votes, full stop
+ *   2. Where did they go?              -> every vote joins a team
+ *   3. How do votes become seats?      -> each group worth 20% wins one
+ *   4. What about the votes left over? -> the closest leftovers take what remains
+ *   5. Who fills my team's seats?      -> the most personal votes, full stop
  *
- * Step 5 is the payload. It only lands because step 5a first shows the ballot in
- * its printed (alphabetical) order — you cannot see that the printed order was
- * irrelevant unless you were shown the printed order.
+ * Step 5 is the payload, and it only lands because the candidates are shown
+ * first in printed (alphabetical) order: you cannot see that the printed order
+ * was irrelevant unless you were shown the printed order.
  *
- * Every vote is drawn. One dot is a fixed number of votes, and a group of dots
- * worth QUOTA votes wins a seat, so "votes add up to seats" is literally the
- * thing on screen rather than a sentence next to a bar chart.
+ * Everything is drawn inside ONE svg. An earlier version positioned the dots as
+ * HTML over an svg holding the outlines, which lined up at exactly one viewport
+ * width and drifted at every other.
  *
- * Advancing is manual. Timed beats race an explanation past whoever reads slower
- * than the timer, and there is no way to go back.
+ * Beats advance on tap. Within a beat, groups are circled one at a time on a
+ * timer, because "these votes add up to a seat" is a sequence of events rather
+ * than a picture.
  */
 
 const DOTS_PER_SEAT = 20 // one group = one seat, so 5 seats = 100 dots
-const COLS = 10 // grid layout for the opening beat
 const WIDTH = 320
 
-const GRID = { x0: 16, dx: 32, y0: 14, dy: 21 }
-const ROW = { x0: 7, dx: 11, height: 19, labelHeight: 16, partyGap: 9 }
-const GUTTER = 96 // room at the right for '138 left over' plus the seat star
+// Everything below is in svg user units, so it scales as one piece.
+const GRID = { cols: 10, x0: 20, dx: 30, y0: 16, dy: 20 }
+const GROUP = { x: 4, w: 214, pad: 10, rowH: 19, labelH: 16, partyGap: 10 }
+const STAR = { x: GROUP.x + GROUP.w + 8, size: 18 }
+const DOT_R = 3.4
+const dotX = (i) => GROUP.x + GROUP.pad + i * ((GROUP.w - GROUP.pad * 2) / (DOTS_PER_SEAT - 1))
 
 export default function SeatStory({ theme, result, myVote, onDone, onFinish }) {
   const reduced = useReducedMotion()
   const [beat, setBeat] = useState(0)
-  const liveRef = useRef(null)
+  const [step, setStep] = useState(0)
 
   const model = useMemo(() => buildModel(theme, result, myVote), [theme, result, myVote])
   const beats = model.beats
   const current = beats[Math.min(beat, beats.length - 1)]
   const isLast = beat >= beats.length - 1
 
-  // Tell the parent once the story has played out, so the payoff and the
-  // winner-take-all comparison appear only after the explanation lands.
   useEffect(() => {
     if (isLast) onDone?.()
   }, [isLast, onDone])
 
-  const anim = (to, delay = 0) =>
-    reduced
-      ? { animate: to, transition: { duration: 0 } }
-      : { animate: to, transition: { type: 'spring', stiffness: 260, damping: 30, delay } }
+  // Reveal the steps inside a beat. Reduced motion jumps to the finished state.
+  useEffect(() => {
+    const total = current.steps ?? 0
+    if (reduced || total === 0) {
+      setStep(total)
+      return
+    }
+    setStep(0)
+    const timers = []
+    let at = 0
+    for (let i = 1; i <= total; i += 1) {
+      at += current.stepDelay?.(i) ?? 700
+      timers.push(setTimeout(() => setStep(i), at))
+    }
+    return () => timers.forEach(clearTimeout)
+  }, [beat, reduced, current])
 
   return (
     <section aria-label="How the seats were decided">
       <div className="rounded-2xl border border-[var(--line)] bg-[var(--card)] p-4">
-        <p className="min-h-11 text-[15px] leading-snug" aria-live="polite" ref={liveRef}>
+        <p className="min-h-11 text-[15px] leading-snug" aria-live="polite">
           {current.headline}
         </p>
 
         {current.stage === 'dots' ? (
-          <DotStage model={model} phase={current.phase} anim={anim} reduced={reduced} />
+          <DotStage model={model} phase={current.phase} step={step} reduced={reduced} />
         ) : (
-          <CandidateStage
-            model={model}
-            phase={current.phase}
-            reduced={reduced}
-            theme={theme}
-          />
+          <CandidateStage model={model} step={step} reduced={reduced} />
         )}
 
-        {current.note && (
-          <p className="mt-3 text-[13px] leading-snug text-[var(--ink-soft)]">{current.note}</p>
+        {current.note(step) && (
+          <p className="mt-3 text-[13px] leading-snug text-[var(--ink-soft)]">
+            {current.note(step)}
+          </p>
         )}
       </div>
 
@@ -114,142 +124,185 @@ export default function SeatStory({ theme, result, myVote, onDone, onFinish }) {
 }
 
 /* ------------------------------------------------------------------ *
- * Act 1 — every vote as a dot, gathering into teams and then seats
+ * Act 1 — every vote as a dot
  * ------------------------------------------------------------------ */
 
-function DotStage({ model, phase, anim, reduced }) {
-  const showGroups = phase !== 'count' && phase !== 'gather'
-  const showSeats = phase === 'seats' || phase === 'leftover'
+function DotStage({ model, phase, step, reduced }) {
   const spread = phase === 'count'
 
-  return (
-    <div className="relative mt-3" style={{ width: '100%', height: model.stageHeight }}>
-      <svg
-        viewBox={`0 0 ${WIDTH} ${model.stageHeight}`}
-        width="100%"
-        height={model.stageHeight}
-        role="img"
-        aria-label={model.stageLabel(phase)}
-      >
-        {/* Party labels and the outline around each group of votes */}
-        {!spread &&
-          model.rows.map((row) => {
-            // More than one leftover seat can be awarded in the same round, so
-            // this has to light every winning team, not just the first one.
-            const lit =
-              showSeats &&
-              (row.kind === 'full' ||
-                (phase === 'leftover' && model.leftoverWinners.includes(row.listId)))
-            return (
-              <g key={row.key}>
-                {row.first && (
-                  <text
-                    x="2"
-                    y={row.y - 12}
-                    fontSize="10"
-                    fontWeight="600"
-                    fill="var(--ink)"
-                  >
-                    {row.listName} · {row.listVotes.toLocaleString()} votes
-                  </text>
-                )}
-                {showGroups && (
-                  <rect
-                    x="2"
-                    y={row.y - 9}
-                    width={WIDTH - GUTTER}
-                    height="18"
-                    rx="9"
-                    fill="none"
-                    stroke={row.color}
-                    strokeWidth={lit ? 2 : 1}
-                    strokeDasharray={row.kind === 'full' ? undefined : '4 3'}
-                    opacity={row.kind === 'full' ? 1 : 0.75}
-                  />
-                )}
-                {showSeats && lit && (
-                  <g>
-                    <rect
-                      x={WIDTH - 26}
-                      y={row.y - 9}
-                      width="18"
-                      height="18"
-                      rx="5"
-                      fill={row.color}
-                    />
-                    <text
-                      x={WIDTH - 17}
-                      y={row.y + 5}
-                      textAnchor="middle"
-                      fontSize="12"
-                      fontWeight="700"
-                      fill="#fff"
-                    >
-                      ★
-                    </text>
-                  </g>
-                )}
-                {phase === 'leftover' && row.kind === 'partial' && (
-                  <text
-                    x={WIDTH - 34}
-                    y={row.y + 4}
-                    textAnchor="end"
-                    fontSize="9"
-                    fill="var(--ink-soft)"
-                  >
-                    {/* Rounded: the quota is votes÷5 and rarely a whole number,
-                        and "136.8 votes left over" invites a question the story
-                        doesn't need to answer. */}
-                    {Math.round(row.leftoverVotes).toLocaleString()} left over
-                  </text>
-                )}
-              </g>
-            )
-          })}
-      </svg>
+  // Which groups have been circled so far, in the order this beat reveals them.
+  const revealed = new Set(
+    (phase === 'seats' ? model.fullGroupOrder : phase === 'leftover' ? model.leftoverOrder : [])
+      .slice(0, step)
+      .map((r) => r.key),
+  )
+  // Groups circled in an earlier beat stay circled.
+  const settled = new Set(
+    phase === 'leftover' ? model.fullGroupOrder.map((r) => r.key) : [],
+  )
 
-      {/* The votes themselves. Absolutely positioned so they can travel between
-          the opening grid and their team's rows. */}
-      {model.dots.map((dot) => {
-        const to = spread ? dot.grid : dot.seatPos
-        const scale = WIDTH / (model.stageWidthPx || WIDTH)
-        return (
-          <motion.span
-            key={dot.id}
-            initial={false}
-            {...anim(
-              {
-                left: `${(to.x / WIDTH) * 100}%`,
-                top: to.y,
-                backgroundColor: spread ? '#9aa0a8' : dot.color,
-              },
-              reduced ? 0 : dot.delay,
-            )}
-            className="absolute rounded-full"
-            style={{
-              width: 7 * scale,
-              height: 7 * scale,
-              marginLeft: -3.5,
-              marginTop: -3.5,
-              boxShadow: dot.isMine ? '0 0 0 2px var(--ink)' : undefined,
-              zIndex: dot.isMine ? 2 : 1,
-            }}
-          />
-        )
-      })}
-    </div>
+  return (
+    <svg
+      viewBox={`0 0 ${WIDTH} ${model.stageHeight}`}
+      width="100%"
+      className="mt-3 block"
+      style={{ height: 'auto' }}
+      role="img"
+      aria-label={model.stageLabel(phase)}
+    >
+      {!spread &&
+        model.rows.map((row) => {
+          const circled = revealed.has(row.key) || settled.has(row.key)
+          return (
+            <g key={row.key}>
+              {row.first && (
+                <text x="2" y={row.y - 12} fontSize="10" fontWeight="600" fill="var(--ink)">
+                  {row.listName} · {row.listVotes.toLocaleString()} votes
+                </text>
+              )}
+
+              {circled && (
+                <rect
+                  className={reduced ? undefined : 'group-ring'}
+                  x={GROUP.x}
+                  y={row.y - 9}
+                  width={GROUP.w}
+                  height="18"
+                  rx="9"
+                  fill="none"
+                  stroke={row.color}
+                  strokeWidth="2"
+                  // A leftover seat is drawn dashed and marked +, an earned one
+                  // solid and marked ★. Without that, the leftover screen looks
+                  // identical to the one before it and reads as though these
+                  // teams had also reached a full group.
+                  strokeDasharray={row.kind === 'full' ? undefined : '5 3'}
+                />
+              )}
+
+              {circled && (
+                <g className={reduced ? undefined : 'seat-badge'}>
+                  <rect
+                    x={STAR.x}
+                    y={row.y - 9}
+                    width={STAR.size}
+                    height={STAR.size}
+                    rx="5"
+                    fill={row.color}
+                  />
+                  <text
+                    x={STAR.x + STAR.size / 2}
+                    y={row.y + 5}
+                    textAnchor="middle"
+                    fontSize="12"
+                    fontWeight="700"
+                    fill="#fff"
+                  >
+                    {row.kind === 'full' ? '★' : '+'}
+                  </text>
+                </g>
+              )}
+
+              {phase === 'leftover' && row.kind === 'partial' && (
+                <text
+                  x={WIDTH - 4}
+                  y={row.y + 4}
+                  textAnchor="end"
+                  fontSize="9"
+                  fill="var(--ink-soft)"
+                >
+                  {/* Rounded: the quota is votes ÷ 5 and rarely whole, and
+                      "136.8 votes left over" raises a question the story
+                      doesn't need to answer. */}
+                  {Math.round(row.leftoverVotes).toLocaleString()} left over
+                </text>
+              )}
+            </g>
+          )
+        })}
+
+      <Dots dots={model.dots} myDot={model.myDot} spread={spread} reduced={reduced} />
+    </svg>
+  )
+}
+
+/**
+ * The votes, isolated behind memo.
+ *
+ * These depend only on which layout is showing, never on the circling step. Left
+ * in the parent they re-rendered on every step tick, and each re-render handed
+ * Motion a fresh transition, restarting the spring before it could finish — the
+ * dots visibly stalled partway between the grid and their team rows.
+ */
+/**
+ * The votes.
+ *
+ * Plain SVG with CSS transitions rather than Motion. Each dot is anchored at its
+ * team-row position and translated out to the opening grid, so moving them is
+ * one transform change. Motion was applying these values on mount and then
+ * ignoring every later update — every vote stayed stranded in the grid while
+ * the group outlines drew around them — and for something this simple (100
+ * elements, one property, no orchestration) a CSS transition is both
+ * deterministic and cheaper.
+ */
+function Dots({ dots, myDot, spread, reduced }) {
+  const ease = reduced
+    ? 'none'
+    : 'transform .55s cubic-bezier(.22,1,.36,1), fill .35s linear'
+  const shift = (dot) =>
+    spread
+      ? `translate(${dot.grid.x - dot.seatPos.x}px, ${dot.grid.y - dot.seatPos.y}px)`
+      : 'none'
+
+  return (
+    <>
+      {dots.map((dot) => (
+        <circle
+          key={dot.id}
+          cx={dot.seatPos.x}
+          cy={dot.seatPos.y}
+          r={DOT_R}
+          // The reader's own vote wears its team colour from the first beat.
+          fill={dot.isMine || !spread ? dot.color : '#9aa0a8'}
+          style={{ transform: shift(dot), transition: ease }}
+        />
+      ))}
+
+      {/* and pulses, so it stays findable once the dots have moved */}
+      {myDot && (
+        <circle
+          cx={myDot.seatPos.x}
+          cy={myDot.seatPos.y}
+          r={DOT_R + 2.5}
+          fill="none"
+          stroke={myDot.color}
+          strokeWidth="1.6"
+          className={reduced ? undefined : 'vote-pulse'}
+          style={{
+            transform: shift(myDot),
+            transition: ease,
+          }}
+        />
+      )}
+    </>
   )
 }
 
 /* ------------------------------------------------------------------ *
- * Act 2 — inside the voter's own team
+ * Act 2 — inside the voter's own team, in one continuous sequence
  * ------------------------------------------------------------------ */
 
-function CandidateStage({ model, phase, reduced, theme }) {
+function CandidateStage({ model, step, reduced }) {
   const { myList } = model
-  const showVotes = phase !== 'ballot'
-  const ranked = phase === 'elected'
-  const rows = ranked ? myList.byVotes : myList.printed
+  const n = myList.printed.length
+
+  // step 0: header only. 1: names appear. 2..n+1: votes count in, one per row.
+  // n+2: the list re-sorts. n+3: seats awarded.
+  const showNames = step >= 1
+  const votesShown = Math.max(0, Math.min(n, step - 1))
+  const sorted = step >= n + 2
+  const awarded = step >= n + 3
+  const rows = sorted ? myList.byVotes : myList.printed
   const max = Math.max(...myList.printed.map((c) => c.votes), 1)
 
   return (
@@ -268,49 +321,47 @@ function CandidateStage({ model, phase, reduced, theme }) {
         </span>
       </div>
 
-      <ul className="rounded-b-xl border border-t-0 border-[var(--line)]">
-        {rows.map((cand) => {
-          const won = ranked && cand.elected
-          return (
-            <motion.li
-              key={cand.id}
-              layout={!reduced}
-              transition={{ type: 'spring', stiffness: 320, damping: 34 }}
-              className="flex items-center gap-2 border-t border-[var(--line)] px-3 py-2 first:border-t-0"
-              style={{ backgroundColor: won ? `${myList.color}14` : undefined }}
-            >
-              <span className="w-4 shrink-0 text-center text-xs">
-                {won ? '★' : ''}
-              </span>
-              <span className={`min-w-0 flex-1 truncate text-[13px] ${won ? 'font-semibold' : ''}`}>
-                {cand.name}
-              </span>
-              {showVotes && (
-                <>
-                  <span className="block h-2 w-14 shrink-0 overflow-hidden rounded-full bg-black/[0.07] sm:w-20">
-                    <motion.span
-                      className="block h-2 rounded-full"
-                      style={{ backgroundColor: myList.color }}
-                      initial={reduced ? false : { width: 0 }}
-                      animate={{ width: `${(cand.votes / max) * 100}%` }}
-                      transition={{ duration: reduced ? 0 : 0.5 }}
-                    />
-                  </span>
-                  <b className="w-11 shrink-0 text-right text-xs tabular-nums">
-                    {cand.votes.toLocaleString()}
-                  </b>
-                </>
-              )}
-            </motion.li>
-          )
-        })}
+      <ul
+        className="overflow-hidden rounded-b-xl border border-t-0 border-[var(--line)]"
+        style={{ minHeight: n * 37 }}
+      >
+        {showNames &&
+          rows.map((cand) => {
+            const rank = myList.printed.findIndex((c) => c.id === cand.id)
+            const revealed = sorted || rank < votesShown
+            const won = awarded && cand.elected
+            return (
+              <motion.li
+                key={cand.id}
+                layout={!reduced}
+                initial={reduced ? false : { opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ type: 'spring', stiffness: 320, damping: 34 }}
+                className="flex items-center gap-2 border-t border-[var(--line)] px-3 py-2 first:border-t-0"
+                style={{ backgroundColor: won ? `${myList.color}14` : undefined }}
+              >
+                <span className="w-4 shrink-0 text-center text-xs">{won ? '★' : ''}</span>
+                <span
+                  className={`min-w-0 flex-1 truncate text-[13px] ${won ? 'font-semibold' : ''}`}
+                >
+                  {cand.name}
+                </span>
+                <span className="block h-2 w-14 shrink-0 overflow-hidden rounded-full bg-black/[0.07] sm:w-20">
+                  <motion.span
+                    className="block h-2 rounded-full"
+                    style={{ backgroundColor: myList.color }}
+                    initial={false}
+                    animate={{ width: revealed ? `${(cand.votes / max) * 100}%` : 0 }}
+                    transition={{ duration: reduced ? 0 : 0.45 }}
+                  />
+                </span>
+                <b className="w-11 shrink-0 text-right text-xs tabular-nums">
+                  {revealed ? cand.votes.toLocaleString() : ''}
+                </b>
+              </motion.li>
+            )
+          })}
       </ul>
-
-      <p className="mt-2 text-[12px] text-[var(--ink-soft)]">
-        {phase === 'ballot'
-          ? `Printed in alphabetical order — the same order you saw on the ballot.`
-          : `Nothing about the printed order decides this. Only the ${theme.nounPlural ?? 'people'} voters marked.`}
-      </p>
     </div>
   )
 }
@@ -325,15 +376,16 @@ function buildModel(theme, result, myVote) {
   const nounPlural = theme.nounPlural ?? 'people'
   const votesPerDot = Math.max(1, Math.round(quota / DOTS_PER_SEAT))
 
-  // Rows: one per group of votes. Full groups have already won a seat; a partial
-  // group is the votes that didn't reach the next full group.
   const rows = []
   for (const list of result.lists) {
     const leftoverVotes = Math.max(0, list.votes - list.quotaSeats * quota)
-    // Size the partial group from the real leftover, not from rounded dots, so
-    // the biggest leftover always *looks* biggest — otherwise rounding could
-    // show a smaller bar winning the last seat.
-    const partialDots = Math.max(0, Math.min(DOTS_PER_SEAT - 1, Math.round((leftoverVotes / quota) * DOTS_PER_SEAT)))
+    // Size the partial group from the real leftover rather than from rounded
+    // dots, so the biggest leftover always *looks* biggest — otherwise rounding
+    // could show a smaller group winning the last seat.
+    const partialDots = Math.max(
+      0,
+      Math.min(DOTS_PER_SEAT - 1, Math.round((leftoverVotes / quota) * DOTS_PER_SEAT)),
+    )
     let first = true
     for (let g = 0; g < list.quotaSeats; g += 1) {
       rows.push({
@@ -344,6 +396,7 @@ function buildModel(theme, result, myVote) {
         color: list.color,
         kind: 'full',
         dotCount: DOTS_PER_SEAT,
+        leftoverVotes: 0,
         first,
       })
       first = false
@@ -358,23 +411,24 @@ function buildModel(theme, result, myVote) {
         kind: 'partial',
         dotCount: partialDots,
         leftoverVotes,
+        wonLeftover: list.remainderSeats > 0,
         first,
       })
     }
   }
 
-  // Vertical placement: a label above each party's first row, then its rows.
-  let y = ROW.labelHeight + 6
+  let y = GROUP.labelH + 6
   for (const row of rows) {
-    if (row.first && row !== rows[0]) y += ROW.partyGap
-    if (row.first) y += ROW.labelHeight - 6
+    if (row.first && row !== rows[0]) y += GROUP.partyGap
+    if (row.first) y += GROUP.labelH - 6
     row.y = y
-    y += ROW.height
+    y += GROUP.rowH
   }
-  const stageHeight = y + 6
+  const rowsHeight = y + 6
+  const gridHeight = GRID.y0 + Math.ceil(100 / GRID.cols) * GRID.dy + 6
+  // One height for every beat, so the card doesn't resize as the story advances.
+  const stageHeight = Math.max(rowsHeight, gridHeight)
 
-  // One dot per chunk of votes, positioned in the opening grid and again in its
-  // team's row. Same dot in both places, so it visibly travels.
   const dots = []
   let gridIndex = 0
   for (const row of rows) {
@@ -384,39 +438,41 @@ function buildModel(theme, result, myVote) {
         listId: row.listId,
         color: row.color,
         grid: {
-          x: GRID.x0 + (gridIndex % COLS) * GRID.dx,
-          y: GRID.y0 + Math.floor(gridIndex / COLS) * GRID.dy,
+          x: GRID.x0 + (gridIndex % GRID.cols) * GRID.dx,
+          y: GRID.y0 + Math.floor(gridIndex / GRID.cols) * GRID.dy,
         },
-        seatPos: { x: ROW.x0 + i * ROW.dx + 7, y: row.y },
-        delay: gridIndex * 0.006,
+        seatPos: { x: dotX(i), y: row.y },
+        // Small stagger only. A long one leaves the dots visibly mid-flight
+        // under the team labels, which reads as a broken layout rather than
+        // as votes travelling.
+        delay: gridIndex * 0.0025,
         isMine: false,
       })
       gridIndex += 1
     }
   }
 
-  // Mark one dot as the reader's own, in the team they voted for.
-  if (myVote) {
-    const mine = dots.find((d) => d.listId === myVote.listId)
-    if (mine) mine.isMine = true
-  }
+  const myDot = myVote ? dots.find((d) => d.listId === myVote.listId) : null
+  if (myDot) myDot.isMine = true
 
-  const leftoverWinnerLists = result.lists.filter((l) => l.remainderSeats > 0)
-  const leftoverWinners = leftoverWinnerLists.map((l) => l.id)
-  const remainderCount = result.lists.reduce((n, l) => n + l.remainderSeats, 0)
-  const fullSeats = result.seats - remainderCount
+  const fullGroupOrder = rows.filter((r) => r.kind === 'full')
+  const leftoverOrder = rows
+    .filter((r) => r.kind === 'partial' && r.wonLeftover)
+    .sort((a, b) => b.leftoverVotes - a.leftoverVotes) // closest to a full group first
 
-  // Act 2 focuses on the reader's own team; without a vote, the biggest team.
+  const remainderCount = leftoverOrder.length
+  const fullSeats = fullGroupOrder.length
+  const quotaText = Math.round(quota).toLocaleString()
+
   const focusId =
     myVote?.listId ?? [...result.lists].sort((a, b) => b.votes - a.votes)[0]?.id
   const focus = result.lists.find((l) => l.id === focusId) ?? result.lists[0]
   const printed = ballotOrder(focus.candidates)
   const byVotes = [...focus.candidates].sort((a, b) => a.rank - b.rank)
 
-  const seatWord = focus.seats === 1 ? 'seat' : 'seats'
   const winnerSentence =
     focus.seats === 0
-      ? `${focus.name} finished short of a full group of ${Math.round(quota).toLocaleString()} votes, so it won no seats.`
+      ? `${focus.name} finished short of a full group of ${quotaText} votes, so it won no seats.`
       : focus.seats === 1
         ? `${focus.name} wins 1 seat. The ${noun} with the most votes wins.`
         : `${focus.name} wins ${focus.seats} seats. The ${focus.seats} ${nounPlural} with the most votes win.`
@@ -426,28 +482,34 @@ function buildModel(theme, result, myVote) {
       stage: 'dots',
       phase: 'count',
       headline: `${result.totalVotes.toLocaleString()} votes were cast.`,
-      note: `Every dot is about ${votesPerDot.toLocaleString()} ${votesPerDot === 1 ? 'vote' : 'votes'}.`,
+      steps: 0,
+      note: () =>
+        `Every dot is about ${votesPerDot.toLocaleString()} ${votesPerDot === 1 ? 'vote' : 'votes'}${
+          myDot ? ', and the colored dot includes yours' : ''
+        }.`,
     },
     {
       stage: 'dots',
       phase: 'gather',
       headline: 'Every vote joins the team it was cast for.',
-      note: 'Nobody’s vote is set aside. They all end up somewhere.',
+      steps: 0,
+      note: () => null,
     },
     {
       stage: 'dots',
       phase: 'seats',
-      headline: `It takes 20% of the votes to win one of the ${result.seats} seats — that’s ${Math.round(quota).toLocaleString()} votes.`,
-      note: `Every group of ${Math.round(quota).toLocaleString()} votes wins one seat. ${
-        fullSeats === result.seats
-          ? 'All 5 seats are filled exactly.'
-          : `That fills ${fullSeats} of the ${result.seats} seats. The dashed groups are votes that didn’t reach ${Math.round(quota).toLocaleString()}.`
-      }`,
+      headline: `It takes 20% of the votes to win 1 of the ${result.seats} seats. Right now that’s ${quotaText} votes.`,
+      steps: fullSeats,
+      stepDelay: (i) => (i === 1 ? 500 : 850),
+      note: (step) =>
+        step >= fullSeats
+          ? `Every group of ${quotaText} votes wins one seat — that fills ${fullSeats} of the ${result.seats}.`
+          : null,
     },
   ]
 
-  if (remainderCount > 0 && leftoverWinnerLists.length > 0) {
-    const names = leftoverWinnerLists.map((l) => l.name)
+  if (remainderCount > 0) {
+    const names = leftoverOrder.map((r) => r.listName)
     const nameList =
       names.length === 1
         ? names[0]
@@ -455,39 +517,41 @@ function buildModel(theme, result, myVote) {
     beats.push({
       stage: 'dots',
       phase: 'leftover',
-      headline: `${remainderCount === 1 ? 'One seat is' : `${remainderCount} seats are`} still open, and no team has another full group of ${Math.round(quota).toLocaleString()}.`,
-      note:
-        names.length === 1
-          ? `${nameList} has the most votes left over, so it takes that seat.`
-          : `The ${names.length} teams with the most votes left over — ${nameList} — take them.`,
+      headline: `${remainderCount === 1 ? 'One seat is' : `${remainderCount} seats are`} still open, and no team has another full group of ${quotaText}.`,
+      steps: remainderCount,
+      stepDelay: (i) => (i === 1 ? 600 : 950),
+      note: (step) =>
+        step >= remainderCount
+          ? names.length === 1
+            ? `${nameList} came closest to another full group, so it takes that seat (+). ★ marks the seats already won outright.`
+            : `${nameList} came closest to another full group, so they take them (+). ★ marks the seats already won outright.`
+          : null,
     })
   }
 
+  const act2Steps = printed.length + 3
   beats.push({
     stage: 'cands',
-    phase: 'ballot',
-    headline: `So who fills ${focus.name}’s ${focus.seats === 0 ? 'seats' : seatWord}?`,
-    note: null,
-  })
-
-  beats.push({
-    stage: 'cands',
-    phase: 'elected',
-    headline: winnerSentence,
-    note: null,
+    phase: 'inside',
+    headline:
+      focus.seats === 0
+        ? `So who did ${focus.name}’s voters pick?`
+        : `So who fills ${focus.name}’s ${focus.seats === 1 ? 'seat' : 'seats'}?`,
+    steps: act2Steps,
+    // A beat to read the question, then names, then a vote per row, then the
+    // re-sort, then the seats.
+    stepDelay: (i) => (i === 1 ? 1000 : i <= printed.length + 1 ? 420 : 750),
+    note: (step) => (step >= act2Steps ? winnerSentence : null),
   })
 
   return {
     rows,
     dots,
+    myDot,
     stageHeight,
-    stageWidthPx: WIDTH,
-    leftoverWinners,
-    myList: {
-      ...focus,
-      printed,
-      byVotes,
-    },
+    fullGroupOrder,
+    leftoverOrder,
+    myList: { ...focus, printed, byVotes },
     stageLabel: (phase) =>
       phase === 'count'
         ? `${result.totalVotes.toLocaleString()} votes, drawn as dots`

@@ -150,7 +150,7 @@ export default function Results({ theme, myVote, results, error, onRestart }) {
             >
               <p className="text-[15px]">
                 <span aria-hidden="true">{result.wta.listEmoji}</span>{' '}
-                <strong>{result.wta.listName}</strong> came first with{' '}
+                <strong>{result.wta.listName}</strong> came in first with{' '}
                 {result.wta.pctRepresented.toFixed(1)}% of the vote — so it would take{' '}
                 <strong>all {SEATS} seats</strong>.
               </p>

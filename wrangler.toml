@@ -4,12 +4,12 @@ compatibility_date = "2025-06-01"
 
 # Cloudflare D1.
 #
-# database_id below is a local-only placeholder so `npm run db:reset` and
-# `npm run preview:full` agree on which local SQLite file to use — local D1 never
-# checks the id against Cloudflare. REPLACE IT with the real id before deploying:
-#   npx wrangler d1 create ols-votes
+# database_id below is the real id, from `npx wrangler d1 create ols-votes`. Local D1
+# never checks it against Cloudflare — it only needs `npm run db:reset` and
+# `npm run preview:full` to agree on which local SQLite file to use — but the remote
+# commands do, so it has to be the real one.
 #
-# Then apply the schema and seed, locally and remotely:
+# Apply the schema and seed, locally and remotely:
 #   npx wrangler d1 execute ols-votes --local  --file=./schema.sql
 #   npx wrangler d1 execute ols-votes --local  --file=./seed.sql
 #   npx wrangler d1 execute ols-votes --remote --file=./schema.sql
@@ -20,4 +20,4 @@ compatibility_date = "2025-06-01"
 [[d1_databases]]
 binding = "DB"
 database_name = "ols-votes"
-database_id = "00000000-0000-4000-8000-00000000d1d1"
+database_id = "927c3aa4-5eb1-4ea3-858b-d6c02e807f63"

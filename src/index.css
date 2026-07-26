@@ -27,6 +27,58 @@ body {
   -webkit-text-size-adjust: 100%;
 }
 
+/* The ring marking the reader's own vote in the results story.
+   Pulses via opacity and stroke-width, never transform — the dot's transform is
+   already carrying its position, and a second one would fight it. */
+@keyframes vote-pulse {
+  0%,
+  100% {
+    opacity: 0.95;
+    stroke-width: 1.6;
+  }
+  50% {
+    opacity: 0.2;
+    stroke-width: 3.4;
+  }
+}
+.vote-pulse {
+  animation: vote-pulse 1.7s ease-in-out infinite;
+}
+
+/* Results story, Act 1. These run on mount, when the element first appears,
+   rather than on a prop change — which is what makes them dependable here. */
+@keyframes ring-in {
+  from {
+    opacity: 0;
+    transform: scaleX(0.82);
+  }
+  to {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+.group-ring {
+  transform-box: fill-box;
+  transform-origin: left center;
+  animation: ring-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes badge-in {
+  from {
+    opacity: 0;
+    transform: scale(0);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.seat-badge {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: badge-in 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s both;
+}
+
 /* Hide scrollbars on the carousel without losing scrollability. */
 .no-scrollbar {
   scrollbar-width: none;
