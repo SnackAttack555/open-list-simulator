@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
 import { allocate, describeMyVote } from '../lib/allocate.js'
+import { partyName } from '../data/index.js'
 import { SEATS } from '../config.js'
 import SeatStory from '../components/SeatStory.jsx'
 
@@ -39,7 +40,7 @@ export default function Results({ theme, myVote, results, error, onRestart }) {
 
   if (error && !result) {
     return (
-      <div className="px-5 py-16 text-center">
+      <div className="mx-auto w-full max-w-[520px] px-5 py-16 text-center">
         <p className="text-[var(--ink-soft)]">{error}</p>
         <button
           type="button"
@@ -54,7 +55,7 @@ export default function Results({ theme, myVote, results, error, onRestart }) {
 
   if (!result) {
     return (
-      <div className="px-5 py-16 text-center text-[var(--ink-soft)]">
+      <div className="mx-auto w-full max-w-[520px] px-5 py-16 text-center text-[var(--ink-soft)]">
         <p>Counting the votes…</p>
       </div>
     )
@@ -65,7 +66,7 @@ export default function Results({ theme, myVote, results, error, onRestart }) {
     : { initial: { opacity: 0, y: 10 }, animate: { opacity: 1, y: 0 } }
 
   return (
-    <div className="px-5 pt-6 pb-12">
+    <div className="mx-auto w-full max-w-[520px] px-5 pt-6 pb-12">
       <h1 className="text-2xl font-semibold tracking-tight">{theme.name}</h1>
       <p className="mt-1 mb-5 text-sm text-[var(--ink-soft)]">
         {result.totalVotes.toLocaleString()} votes · {result.seats} seats
@@ -96,7 +97,7 @@ export default function Results({ theme, myVote, results, error, onRestart }) {
                 <span className="min-w-0 flex-1">
                   <span className="block font-medium">{winner.name}</span>
                   <span className="block text-xs text-[var(--ink-soft)]">
-                    {winner.listName} · {winner.votes.toLocaleString()} votes
+                    {partyName(winner.listName)} · {winner.votes.toLocaleString()} votes
                     {winner.tieBroken && ' · tied, drawn from a hat 🎩'}
                   </span>
                 </span>
@@ -116,14 +117,15 @@ export default function Results({ theme, myVote, results, error, onRestart }) {
                 </p>
               ) : mine.representedByList ? (
                 <p className="text-[17px]">
-                  <strong>{mine.candidateName}</strong> didn&apos;t win a seat, but{' '}
-                  {mine.listName} won {mine.listSeats} — your vote still elected someone from
-                  your team.
+                  <strong>{mine.candidateName}</strong> didn&apos;t win a seat, but the{' '}
+                  {partyName(mine.listName)} won {mine.listSeats} — your vote still elected
+                  someone from your party.
                 </p>
               ) : (
                 <p className="text-[17px]">
-                  You voted for <strong>{mine.candidateName}</strong>. {mine.listName} finished
-                  short of a full group, so it won no seats this time.
+                  You voted for <strong>{mine.candidateName}</strong>. The{' '}
+                  {partyName(mine.listName)} finished short of a full group, so it won no seats
+                  this time.
                 </p>
               )}
             </div>
@@ -131,28 +133,42 @@ export default function Results({ theme, myVote, results, error, onRestart }) {
 
           <p className="mt-7 text-[17px]">
             <strong>{Math.round(result.pctRepresented)}% of voters</strong> helped elect someone
-            from their team.
+            from their party.
           </p>
+
+          {/* The question stays on screen after it is answered. It was the button
+              label before, so tapping it took the question away and left the
+              answer sitting under nothing — you had to remember what you'd asked. */}
+          <h2 className="mt-7 text-lg font-semibold">
+            What if this was winner-take-all, like most US elections?
+          </h2>
 
           {!showWta ? (
             <button
               type="button"
               onClick={() => setShowWta(true)}
-              className="mt-4 min-h-13 w-full rounded-xl border-2 border-[var(--accent)] px-4 py-3 font-semibold text-[var(--accent)]"
+              className="mt-3 min-h-13 w-full rounded-xl border-2 border-[var(--accent)] px-4 py-3 font-semibold text-[var(--accent)]"
             >
-              What if this were winner-take-all?
+              Show me what would happen
             </button>
           ) : (
             <motion.div
               ref={wtaRef}
               {...fade}
-              className="mt-4 rounded-2xl border border-[var(--line)] bg-[var(--card)] p-4"
+              className="mt-3 rounded-2xl border border-[var(--line)] bg-[var(--card)] p-4"
             >
-              <p className="text-[15px]">
-                <span aria-hidden="true">{result.wta.listEmoji}</span>{' '}
-                <strong>{result.wta.listName}</strong> came in first with{' '}
-                {result.wta.pctRepresented.toFixed(1)}% of the vote — so it would take{' '}
-                <strong>all {SEATS} seats</strong>.
+              <p className="text-[15px] leading-relaxed">
+                This district elected {result.seats} people. Under traditional (winner take
+                all) rules, there would be {result.seats} nearby districts and the{' '}
+                <strong>
+                  <span aria-hidden="true">{result.wta.listEmoji}</span>{' '}
+                  {partyName(result.wta.listName)}
+                </strong>{' '}
+                would have won all of them even though they only won{' '}
+                <strong>{result.wta.pctRepresented.toFixed(1)}%</strong> of the vote. Voters
+                supporting the other parties, who made up{' '}
+                <strong>{(100 - result.wta.pctRepresented).toFixed(1)}%</strong> of voters,
+                would elect no representative from these districts.
               </p>
               <div className="mt-3 flex gap-1.5">
                 {Array.from({ length: SEATS }, (_, i) => (
@@ -183,7 +199,7 @@ export default function Results({ theme, myVote, results, error, onRestart }) {
                   .filter((l) => l.id !== result.wta.listId && l.seats > 0)
                   .map((l) => (
                     <li key={l.id}>
-                      {l.name} would lose {l.seats} seat{l.seats === 1 ? '' : 's'} on{' '}
+                      The {partyName(l)} would lose {l.seats} seat{l.seats === 1 ? '' : 's'} on{' '}
                       {l.votePct.toFixed(1)}% of the vote
                     </li>
                   ))}

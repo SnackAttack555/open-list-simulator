@@ -8,6 +8,14 @@ The design constraint is **minimum explanation**. No tutorial, no primer. The ba
 teaches by being obviously easy; the results teach by showing that the voter's side got
 represented even though it didn't win everything.
 
+The ballot has two layouts, picked by CSS rather than by measuring the window so there
+is no flash of the wrong one. Narrow screens get a scroll-snap carousel with a chip row
+naming every party; at `lg` and up every card is on screen at once and both the chips and
+the swipe hint disappear, because a jump link to a card you are already looking at is
+noise. `docs/` holds the storyboards behind the results animation, including
+`anim-storyboard-winners-first.html`, which compares the shipped order against opening
+with the winners.
+
 ## Running it
 
 ```bash
@@ -37,12 +45,30 @@ npm run lint
 Almost everything lives in two files.
 
 - **`src/data/themes.js`** — the five universal rosters. Adding a theme means appending
-  one object. Five candidates per list.
+  one object. **Four parties per theme, five candidates per party.** Four is a content
+  decision, not a constraint the code enforces: five parties against five seats left
+  the last party winning nothing often enough that the ballot looked like a trap.
+  The word "party" is appended at display time by `partyName()` in `src/data/index.js`
+  rather than baked into the names, so the data stays "Gryffindor" and the screen
+  reads "Gryffindor party".
 - **`src/data/regions.js`** — what varies by state edition: the sports roster and the
   state outline. v1 ships Michigan only.
 
 The one rule: **`id` values are written into the database.** Renaming an `id` orphans
 every vote already cast for it. Change a `name` freely; never an `id`.
+
+Removing a party is safe on the seed side — `npm run db:deploy` deletes and rewrites
+every `is_seed = 1` row per theme, so dropped parties disappear on the next seed. Real
+votes cast for a removed party are left in the table and ignored: `allocate()` builds
+from the theme and looks tallies up by id, so rows it doesn't recognise never reach the
+arithmetic. Check for them before dropping a party, because those voters silently stop
+being counted:
+
+```sql
+SELECT theme_id, list_id, COUNT(*) FROM votes
+ WHERE is_seed = 0 AND list_id IN ('the','ids','you','are','dropping')
+ GROUP BY theme_id, list_id;
+```
 
 To add a state edition, add an entry to `REGIONS` and generate its outline from Census
 data — never by hand:
@@ -108,6 +134,13 @@ credential ships in the page.
   results with their original pick restored, so the personal payoff still reads correctly
   however much the election has grown. The local record is written only after the server
   answers — writing it first would burn someone's vote on a dropped request.
+- The ease question is asked **once per browser, ever** — not once per theme. It measures
+  a first impression of an unfamiliar ballot, and there is only one of those per person.
+  The flag is set when the question is shown rather than when it is answered, so skipping
+  counts as having been asked. When it is skipped the app goes straight from the ballot to
+  the results, which is why `App.jsx` tracks `casting`: without the ease screen standing
+  between the two, the results prefetch would otherwise race the insert it depends on and
+  the voter's own ballot would be missing from their own results.
 - Ease answers attach via an opaque per-vote token and only fill a `NULL`, so the one
   statistic this app exists to produce can't be stuffed or rewritten.
 

@@ -9,7 +9,7 @@
  * quietly showing invented numbers.
  */
 
-import { VOTED_STORAGE_KEY } from '../config.js'
+import { EASE_ASKED_KEY, VOTED_STORAGE_KEY } from '../config.js'
 import { getTheme, getThemes } from '../data/index.js'
 import { mockTallies } from './mockElectorate.js'
 
@@ -36,6 +36,31 @@ export function hasVoted(themeId) {
 /** The candidate this browser already picked in a theme, or null. */
 export function myVoteIn(themeId) {
   return myBallots()[themeId] ?? null
+}
+
+/**
+ * Has this browser already been asked how the ballot felt?
+ *
+ * Marked when the question is *shown*, not when it is answered — someone who
+ * skipped it has been asked, and asking again is the nagging the flag exists to
+ * prevent. Storage being unavailable means the question comes back, which is the
+ * safe direction to fail: a duplicate answer costs one row, a suppressed one
+ * costs the statistic.
+ */
+export function hasBeenAskedEase() {
+  try {
+    return localStorage.getItem(EASE_ASKED_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
+export function markEaseAsked() {
+  try {
+    localStorage.setItem(EASE_ASKED_KEY, '1')
+  } catch {
+    /* nothing we can do, and nothing that should break the flow */
+  }
 }
 
 function rememberVote(themeId, listId, candidateId) {

@@ -30,7 +30,7 @@ export const REGIONS = {
       emoji: '🏟️',
       noun: 'person',
       nounPlural: 'people',
-      tagline: 'Four franchises',
+      tagline: 'Four parties',
       lists: [
         {
           id: 'lions',

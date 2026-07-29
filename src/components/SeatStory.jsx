@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
-import { ballotOrder } from '../data/index.js'
+import { ballotOrder, partyName } from '../data/index.js'
 
 /**
  * The results explained, one tap at a time.
@@ -9,10 +9,10 @@ import { ballotOrder } from '../data/index.js'
  * actually asks the questions:
  *
  *   1. How many votes were there?
- *   2. Where did they go?              -> every vote joins a team
+ *   2. Where did they go?              -> every vote joins a party
  *   3. How do votes become seats?      -> each group worth 20% wins one
  *   4. What about the votes left over? -> the closest leftovers take what remains
- *   5. Who fills my team's seats?      -> the most personal votes, full stop
+ *   5. Who fills my party's seats?     -> the most personal votes, full stop
  *
  * Step 5 is the payload, and it only lands because the candidates are shown
  * first in printed (alphabetical) order: you cannot see that the printed order
@@ -175,7 +175,7 @@ function DotStage({ model, phase, step, reduced }) {
                   // A leftover seat is drawn dashed and marked +, an earned one
                   // solid and marked ★. Without that, the leftover screen looks
                   // identical to the one before it and reads as though these
-                  // teams had also reached a full group.
+                  // parties had also reached a full group.
                   strokeDasharray={row.kind === 'full' ? undefined : '5 3'}
                 />
               )}
@@ -232,13 +232,13 @@ function DotStage({ model, phase, step, reduced }) {
  * These depend only on which layout is showing, never on the circling step. Left
  * in the parent they re-rendered on every step tick, and each re-render handed
  * Motion a fresh transition, restarting the spring before it could finish — the
- * dots visibly stalled partway between the grid and their team rows.
+ * dots visibly stalled partway between the grid and their party rows.
  */
 /**
  * The votes.
  *
  * Plain SVG with CSS transitions rather than Motion. Each dot is anchored at its
- * team-row position and translated out to the opening grid, so moving them is
+ * party-row position and translated out to the opening grid, so moving them is
  * one transform change. Motion was applying these values on mount and then
  * ignoring every later update — every vote stayed stranded in the grid while
  * the group outlines drew around them — and for something this simple (100
@@ -262,7 +262,7 @@ function Dots({ dots, myDot, spread, reduced }) {
           cx={dot.seatPos.x}
           cy={dot.seatPos.y}
           r={DOT_R}
-          // The reader's own vote wears its team colour from the first beat.
+          // The reader's own vote wears its party colour from the first beat.
           fill={dot.isMine || !spread ? dot.color : '#9aa0a8'}
           style={{ transform: shift(dot), transition: ease }}
         />
@@ -289,7 +289,7 @@ function Dots({ dots, myDot, spread, reduced }) {
 }
 
 /* ------------------------------------------------------------------ *
- * Act 2 — inside the voter's own team, in one continuous sequence
+ * Act 2 — inside the voter's own party, in one continuous sequence
  * ------------------------------------------------------------------ */
 
 function CandidateStage({ model, step, reduced }) {
@@ -312,7 +312,7 @@ function CandidateStage({ model, step, reduced }) {
         style={{ backgroundColor: myList.color }}
       >
         <span>
-          {myList.emoji} {myList.name}
+          {myList.emoji} {partyName(myList)}
         </span>
         <span>
           {myList.seats === 0
@@ -391,7 +391,7 @@ function buildModel(theme, result, myVote) {
       rows.push({
         key: `${list.id}-full-${g}`,
         listId: list.id,
-        listName: list.name,
+        listName: partyName(list),
         listVotes: list.votes,
         color: list.color,
         kind: 'full',
@@ -405,7 +405,7 @@ function buildModel(theme, result, myVote) {
       rows.push({
         key: `${list.id}-part`,
         listId: list.id,
-        listName: list.name,
+        listName: partyName(list),
         listVotes: list.votes,
         color: list.color,
         kind: 'partial',
@@ -443,7 +443,7 @@ function buildModel(theme, result, myVote) {
         },
         seatPos: { x: dotX(i), y: row.y },
         // Small stagger only. A long one leaves the dots visibly mid-flight
-        // under the team labels, which reads as a broken layout rather than
+        // under the party labels, which reads as a broken layout rather than
         // as votes travelling.
         delay: gridIndex * 0.0025,
         isMine: false,
@@ -472,10 +472,10 @@ function buildModel(theme, result, myVote) {
 
   const winnerSentence =
     focus.seats === 0
-      ? `${focus.name} finished short of a full group of ${quotaText} votes, so it won no seats.`
+      ? `The ${partyName(focus)} finished short of a full group of ${quotaText} votes, so it won no seats.`
       : focus.seats === 1
-        ? `${focus.name} wins 1 seat. The ${noun} with the most votes wins.`
-        : `${focus.name} wins ${focus.seats} seats. The ${focus.seats} ${nounPlural} with the most votes win.`
+        ? `The ${partyName(focus)} wins 1 seat. The ${noun} with the most votes wins.`
+        : `The ${partyName(focus)} wins ${focus.seats} seats. The ${focus.seats} ${nounPlural} with the most votes win.`
 
   const beats = [
     {
@@ -491,7 +491,7 @@ function buildModel(theme, result, myVote) {
     {
       stage: 'dots',
       phase: 'gather',
-      headline: 'Every vote joins the team it was cast for.',
+      headline: 'Every vote joins the party it was cast for.',
       steps: 0,
       note: () => null,
     },
@@ -517,14 +517,18 @@ function buildModel(theme, result, myVote) {
     beats.push({
       stage: 'dots',
       phase: 'leftover',
-      headline: `${remainderCount === 1 ? 'One seat is' : `${remainderCount} seats are`} still open, and no team has another full group of ${quotaText}.`,
+      headline: `${remainderCount === 1 ? 'One seat is' : `${remainderCount} seats are`} still open, and no party has another full group of ${quotaText}.`,
       steps: remainderCount,
       stepDelay: (i) => (i === 1 ? 600 : 950),
+      // "Came closest to another full group" described the arithmetic accurately
+      // and taught nobody anything: it asks the reader to hold a group they never
+      // saw, that nobody completed. Leftover votes are the thing actually on
+      // screen, so the sentence names those instead.
       note: (step) =>
         step >= remainderCount
           ? names.length === 1
-            ? `${nameList} came closest to another full group, so it takes that seat (+). ★ marks the seats already won outright.`
-            : `${nameList} came closest to another full group, so they take them (+). ★ marks the seats already won outright.`
+            ? `${nameList} had the most leftover votes, so it wins the last seat, shown with a +. ★ marks the seats already won outright.`
+            : `${nameList} had the most leftover votes, so they win the last seats, shown with a +. ★ marks the seats already won outright.`
           : null,
     })
   }
@@ -535,8 +539,8 @@ function buildModel(theme, result, myVote) {
     phase: 'inside',
     headline:
       focus.seats === 0
-        ? `So who did ${focus.name}’s voters pick?`
-        : `So who fills ${focus.name}’s ${focus.seats === 1 ? 'seat' : 'seats'}?`,
+        ? `So who did the ${partyName(focus)}’s voters pick?`
+        : `So who fills the ${partyName(focus)}’s ${focus.seats === 1 ? 'seat' : 'seats'}?`,
     steps: act2Steps,
     // A beat to read the question, then names, then a vote per row, then the
     // re-sort, then the seats.
@@ -556,7 +560,7 @@ function buildModel(theme, result, myVote) {
       phase === 'count'
         ? `${result.totalVotes.toLocaleString()} votes, drawn as dots`
         : result.lists
-            .map((l) => `${l.name}: ${l.votes.toLocaleString()} votes, ${l.seats} seats`)
+            .map((l) => `${partyName(l)}: ${l.votes.toLocaleString()} votes, ${l.seats} seats`)
             .join('. '),
     beats,
   }

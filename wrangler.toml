@@ -18,6 +18,15 @@ workers_dev = true
 directory = "./dist"
 binding = "ASSETS"
 
+# Custom domain: deliberately not configured here. mi-sim.representation.vote needs
+# the zone to be active on Cloudflare, and representation.vote is on Namecheap
+# nameservers. An inbound CNAME from Namecheap does not work either — Cloudflare blocks
+# cross-account CNAMEs (error 1014), and subdomain-only delegation is Enterprise-plan.
+# The nameserver move and the record checklist are written up in docs/custom-domain.md.
+#
+# Once the zone is active, add the domain in the dashboard rather than here; Cloudflare
+# then owns the DNS record and the certificate.
+
 # Cloudflare D1. database_id is the real one from `wrangler d1 create ols-votes`;
 # the remote commands check it, and local runs only need it to be consistent.
 #

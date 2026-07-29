@@ -1,19 +1,26 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import BallotBoxIcon from '../components/BallotBoxIcon.jsx'
-import { ballotOrder } from '../data/index.js'
+import { ballotOrder, partyName } from '../data/index.js'
 
 /**
- * The ballot: one party list per card, in a horizontal scroll-snap carousel.
+ * The ballot: one party per card.
  *
- * The carousel isn't an app convention borrowed for its own sake. Real open-list
+ * The card isn't an app convention borrowed for its own sake. Real open-list
  * ballots — Finnish, Brazilian — are laid out in party columns, and you find your
  * party's column before you scan its candidates. A card *is* a column.
  *
- * Two things keep it from hiding the choice: the next card peeks at the right
- * margin so more ballot is visibly there, and the chip row names every list at
- * once. Without those, people vote for whoever is on the first card they see.
+ * Two layouts, chosen by CSS rather than by measuring the window, so there is no
+ * flash of the wrong one on load:
  *
- * Accessibility: the whole carousel is ONE radio group, not one per card, because
+ *   - Narrow (phones): a horizontal scroll-snap carousel. Two things keep it from
+ *     hiding the choice — the next card peeks at the right margin so a thumb can
+ *     see there is more ballot, and the chip row names every party at once.
+ *     Without those, people vote for whoever is on the first card they see.
+ *   - Wide (lg and up): every card on screen at once. The chip row and the swipe
+ *     hint are then answering a question nobody has, so both disappear — a jump
+ *     link to a card you are already looking at is noise.
+ *
+ * Accessibility: the whole ballot is ONE radio group, not one per card, because
  * a voter gets exactly one mark across the entire ballot. Roving tabindex, arrows
  * move through every candidate in ballot order and drag the carousel along.
  */
@@ -93,10 +100,20 @@ export default function Ballot({ theme, selection, onSelect, onCast, onBack }) {
     }
     scroller.addEventListener('scroll', onScroll, { passive: true })
     scroller.addEventListener('scrollend', measure)
+
+    // Re-measure when the container changes size, not only when it scrolls.
+    // Crossing the grid/carousel breakpoint rearranges every card without firing
+    // a single scroll event, so the highlight would keep pointing at whichever
+    // card happened to sit nearest the middle of the *other* layout. Rotating a
+    // phone does the same thing.
+    const observer = new ResizeObserver(measure)
+    observer.observe(scroller)
+
     measure()
     return () => {
       scroller.removeEventListener('scroll', onScroll)
       scroller.removeEventListener('scrollend', measure)
+      observer.disconnect()
       clearTimeout(settle)
       if (frame) cancelAnimationFrame(frame)
     }
@@ -183,8 +200,10 @@ export default function Ballot({ theme, selection, onSelect, onCast, onBack }) {
 
   let flatCursor = -1
 
+  const noun = theme.noun ?? 'person'
+
   return (
-    <div className="flex flex-1 flex-col">
+    <div className="mx-auto flex w-full max-w-[520px] flex-1 flex-col lg:max-w-[1140px]">
       <header className="px-4 pt-4">
         <button
           type="button"
@@ -194,15 +213,13 @@ export default function Ballot({ theme, selection, onSelect, onCast, onBack }) {
           ← All elections
         </button>
         <h1 className="mt-1 text-2xl font-semibold tracking-tight">{theme.name}</h1>
-        <p className="mt-1 text-sm text-[var(--ink-soft)]">
-          Vote for one {theme.noun ?? 'person'}.
-        </p>
       </header>
 
-      {/* Chip row: proves every list exists, and jumps to one. */}
+      {/* Chip row: proves every party exists, and jumps to one. Pointless once
+          every card is on screen at the same time. */}
       <nav
-        aria-label="Jump to a list"
-        className="no-scrollbar mt-3 flex gap-2 overflow-x-auto px-4 pb-1"
+        aria-label="Jump to a party"
+        className="no-scrollbar mt-3 flex gap-2 overflow-x-auto px-4 pb-1 lg:hidden"
       >
         {printedLists.map((list, i) => {
           const isActive = i === activeCard
@@ -212,7 +229,7 @@ export default function Ballot({ theme, selection, onSelect, onCast, onBack }) {
               key={list.id}
               type="button"
               onClick={() => scrollToCard(i)}
-              aria-label={`Go to ${list.name}${holdsSelection ? ', holds your vote' : ''}`}
+              aria-label={`Go to the ${partyName(list)}${holdsSelection ? ', holds your vote' : ''}`}
               aria-current={isActive ? 'true' : undefined}
               className={`flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border px-3 text-sm transition-colors ${
                 isActive
@@ -222,7 +239,7 @@ export default function Ballot({ theme, selection, onSelect, onCast, onBack }) {
               style={isActive ? { backgroundColor: list.color } : undefined}
             >
               <span aria-hidden="true">{list.emoji}</span>
-              <span className="whitespace-nowrap">{list.name}</span>
+              <span className="whitespace-nowrap">{partyName(list)}</span>
               {holdsSelection && (
                 <span aria-hidden="true" className="text-xs">
                   ●
@@ -233,12 +250,20 @@ export default function Ballot({ theme, selection, onSelect, onCast, onBack }) {
         })}
       </nav>
 
+      {/* The entire instruction. It sits against the ballot rather than up in the
+          header because the second sentence is the one idea the whole app exists to
+          land, and it has to be readable at the moment of choosing — not recalled
+          from a subtitle scrolled off the top. */}
+      <p className="mt-3 px-4 text-[15px] leading-snug text-[var(--ink)]">
+        Vote for one {noun}. Your vote also counts toward that {noun}&apos;s party.
+      </p>
+
       {/* One radio group spanning every card: one mark for the whole ballot. */}
       <div
         ref={scrollerRef}
         role="radiogroup"
         aria-label={`Candidates in the ${theme.name} election`}
-        className="no-scrollbar flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 py-3"
+        className="no-scrollbar flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 py-3 lg:grid lg:grid-cols-2 lg:snap-none lg:gap-4 lg:overflow-x-visible xl:grid-cols-4"
       >
         {printedLists.map((list, listIndex) => (
           <section
@@ -247,15 +272,16 @@ export default function Ballot({ theme, selection, onSelect, onCast, onBack }) {
               cardRefs.current[listIndex] = el
             }}
             /* 84vw leaves the next card visibly peeking, which is what tells a
-               thumb there is more ballot to the right. */
-            className="w-[84vw] max-w-[380px] shrink-0 snap-center overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--card)] shadow-sm"
+               thumb there is more ballot to the right. Irrelevant once the grid
+               takes over, where the card just fills its column. */
+            className="w-[84vw] max-w-[380px] shrink-0 snap-center overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--card)] shadow-sm lg:w-auto lg:max-w-none lg:shrink"
           >
             <h2
               className="flex items-center gap-2 px-4 py-3 text-base font-semibold text-white"
               style={{ backgroundColor: list.color }}
             >
               <span aria-hidden="true">{list.emoji}</span>
-              {list.name}
+              {partyName(list)}
             </h2>
             <ul className="divide-y divide-[var(--line)]">
               {list.candidates.map((cand) => {
@@ -275,9 +301,9 @@ export default function Ballot({ theme, selection, onSelect, onCast, onBack }) {
                       type="button"
                       role="radio"
                       /* The card groups these visually; a screen reader gets the
-                         list name in the label instead, or "Snape" arrives with
-                         no idea which house it belongs to. */
-                      aria-label={`${cand.name}, ${list.name}`}
+                         party name in the label instead, or "Snape" arrives with
+                         no idea which party it belongs to. */
+                      aria-label={`${cand.name}, ${partyName(list)}`}
                       aria-checked={isSelected}
                       tabIndex={tabIndex}
                       onKeyDown={(e) => onKeyDown(e, index)}
@@ -314,8 +340,8 @@ export default function Ballot({ theme, selection, onSelect, onCast, onBack }) {
         ))}
       </div>
 
-      <p className="px-4 pb-2 text-center text-xs text-[var(--ink-soft)]">
-        Swipe to see the other lists
+      <p className="px-4 pb-2 text-center text-xs text-[var(--ink-soft)] lg:hidden">
+        Swipe to see the other parties
       </p>
 
       {/* Sticky bar: the selection survives swiping, so you can wander the whole

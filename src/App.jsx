@@ -1,6 +1,14 @@
 import { useCallback, useEffect, useState } from 'react'
 import { DEFAULT_REGION, getRegion, getTheme, getThemes } from './data/index.js'
-import { castVote, fetchResults, hasVoted, myVoteIn, submitEase } from './lib/api.js'
+import {
+  castVote,
+  fetchResults,
+  hasBeenAskedEase,
+  hasVoted,
+  markEaseAsked,
+  myVoteIn,
+  submitEase,
+} from './lib/api.js'
 import Start from './screens/Start.jsx'
 import Ballot from './screens/Ballot.jsx'
 import EaseScale from './screens/EaseScale.jsx'
@@ -18,6 +26,10 @@ export default function App() {
   const [voteToken, setVoteToken] = useState(null)
   const [results, setResults] = useState(null)
   const [error, setError] = useState(null)
+  // True from the moment a ballot is submitted until the tally comes back.
+  // Without the ease screen in the way there is nothing else holding the results
+  // screen off, and its prefetch would otherwise race the insert it depends on.
+  const [casting, setCasting] = useState(false)
 
   const theme = themeId ? getTheme(themeId, REGION) : null
 
@@ -56,7 +68,12 @@ export default function App() {
    * who bounces off the ease screen has still voted, and their ballot should count.
    */
   const handleCast = useCallback(async () => {
-    setScreen('ease')
+    // The ease question is a first-impression measure, so it runs once per
+    // browser. Everyone after that goes straight from the ballot to the results.
+    const ask = !hasBeenAskedEase()
+    if (ask) markEaseAsked()
+    setCasting(true)
+    setScreen(ask ? 'ease' : 'results')
     try {
       // Strictly sequential. Fetching the tally concurrently with the insert lets
       // the read land first, so the voter's own ballot is missing from their own
@@ -74,6 +91,8 @@ export default function App() {
     } catch (err) {
       console.error(err)
       setError('We could not reach the vote server, so this ballot may not have counted.')
+    } finally {
+      setCasting(false)
     }
   }, [themeId, selection])
 
@@ -91,20 +110,27 @@ export default function App() {
     [voteToken],
   )
 
-  // Results were prefetched during the ease screen; this covers a slow network.
+  // Covers arriving at the results without having just voted — a repeat visitor
+  // sent straight here by their stored ballot — and a slow network behind the
+  // ease screen. Never while a ballot is in flight: handleCast owns that fetch,
+  // and it has to run after the insert, not alongside it.
   useEffect(() => {
-    if (screen !== 'results' || results || !themeId) return
+    if (screen !== 'results' || results || !themeId || casting) return
     fetchResults(themeId, REGION)
       .then(setResults)
       .catch(() => setError('We could not load the results.'))
-  }, [screen, results, themeId])
+  }, [screen, results, themeId, casting])
 
   return (
     /* dvh, not `min-h-full`: a percentage min-height resolves against the
        parent's *height*, which is auto here, so it would collapse and the
        ballot's sticky bar would float mid-screen. dvh also tracks mobile
-       browser chrome as it hides. */
-    <div className="mx-auto flex min-h-dvh max-w-[520px] flex-col">
+       browser chrome as it hides.
+
+       The reading column is set per screen rather than here, because the ballot
+       is the one screen that earns a wide window — it has four cards to show at
+       once. Prose stays at phone width everywhere else no matter the monitor. */
+    <div className="flex min-h-dvh w-full flex-col">
       {screen === 'start' && <Start region={region} themes={themes} onPick={openTheme} />}
 
       {screen === 'ballot' && theme && (

@@ -35,7 +35,7 @@ export const UNIVERSAL_THEMES = [
     emoji: '🏰',
     noun: 'person',
     nounPlural: 'people',
-    tagline: 'Four houses',
+    tagline: 'Four parties',
     lists: [
       {
         id: 'gryffindor',
@@ -97,7 +97,7 @@ export const UNIVERSAL_THEMES = [
     emoji: '🌌',
     noun: 'person',
     nounPlural: 'people',
-    tagline: 'Five factions',
+    tagline: 'Four parties',
     lists: [
       {
         id: 'jedi',
@@ -145,13 +145,6 @@ export const UNIVERSAL_THEMES = [
           'Saw Gerrera',
         ),
       },
-      {
-        id: 'droids',
-        name: 'Droids',
-        emoji: '🤖',
-        color: '#a16207',
-        candidates: c('R2-D2', 'C-3PO', 'BB-8', 'K-2SO', 'IG-11'),
-      },
     ],
   },
   {
@@ -160,7 +153,7 @@ export const UNIVERSAL_THEMES = [
     emoji: '🦸',
     noun: 'person',
     nounPlural: 'people',
-    tagline: 'Five teams',
+    tagline: 'Four parties',
     lists: [
       {
         id: 'avengers',
@@ -184,13 +177,6 @@ export const UNIVERSAL_THEMES = [
         candidates: c('Wolverine', 'Storm', 'Professor X', 'Jean Grey', 'Nightcrawler'),
       },
       {
-        id: 'guardians',
-        name: 'Guardians of the Galaxy',
-        emoji: '🚀',
-        color: '#7e22ce',
-        candidates: c('Star-Lord', 'Gamora', 'Rocket', 'Groot', 'Nebula'),
-      },
-      {
         id: 'villains',
         name: 'Supervillains',
         emoji: '😈',
@@ -205,7 +191,7 @@ export const UNIVERSAL_THEMES = [
     emoji: '🎬',
     noun: 'movie',
     nounPlural: 'movies',
-    tagline: 'Five studios',
+    tagline: 'Four parties',
     lists: [
       {
         id: 'disney',
@@ -241,19 +227,6 @@ export const UNIVERSAL_THEMES = [
         ),
       },
       {
-        id: 'ghibli',
-        name: 'Studio Ghibli',
-        emoji: '🌾',
-        color: '#6d28d9',
-        candidates: c(
-          'Spirited Away',
-          'My Neighbor Totoro',
-          'Princess Mononoke',
-          "Howl's Moving Castle",
-          "Kiki's Delivery Service",
-        ),
-      },
-      {
         id: 'illumination',
         name: 'Illumination',
         emoji: '🍌',
@@ -274,32 +247,32 @@ export const UNIVERSAL_THEMES = [
     emoji: '🐾',
     noun: 'animal',
     nounPlural: 'animals',
-    tagline: 'Four teams',
+    tagline: 'Four parties',
     lists: [
       {
         id: 'cats',
-        name: 'Team Cat',
+        name: 'Cats',
         emoji: '🐈',
         color: '#c2410c',
         candidates: c('Garfield', 'Cheshire Cat', 'Tom', 'Grumpy Cat', 'Puss in Boots'),
       },
       {
         id: 'dogs',
-        name: 'Team Dog',
+        name: 'Dogs',
         emoji: '🐕',
         color: '#4d7c0f',
         candidates: c('Snoopy', 'Scooby-Doo', 'Lassie', 'Bluey', 'Toto'),
       },
       {
         id: 'birds',
-        name: 'Team Bird',
+        name: 'Birds',
         emoji: '🐦',
         color: '#0e7490',
         candidates: c('Big Bird', 'Tweety', 'Donald Duck', 'Hedwig', 'Woodstock'),
       },
       {
         id: 'fish',
-        name: 'Team Fish',
+        name: 'Fish',
         emoji: '🐠',
         color: '#4338ca',
         candidates: c('Nemo', 'Dory', 'Marlin', 'Flounder', 'Jaws'),

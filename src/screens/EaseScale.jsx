@@ -11,7 +11,7 @@ import { EASE_OPTIONS } from '../config.js'
  */
 export default function EaseScale({ onAnswer }) {
   return (
-    <div className="flex flex-1 flex-col justify-center px-5 py-10">
+    <div className="mx-auto flex w-full max-w-[520px] flex-1 flex-col justify-center px-5 py-10">
       <div className="rounded-2xl border border-[var(--line)] bg-[var(--card)] p-5 shadow-sm">
         <p className="text-center text-sm font-medium tracking-wide text-[var(--ink-soft)] uppercase">
           Vote counted

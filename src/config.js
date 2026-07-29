@@ -30,6 +30,18 @@ export const EASE_OPTIONS = [
 export const VOTED_STORAGE_KEY = 'ols.ballots.v2'
 
 /**
+ * localStorage key recording that this browser has already been asked how the
+ * ballot felt.
+ *
+ * Asked once ever, not once per election. The question is measuring a first
+ * impression of an unfamiliar ballot, and there is only one of those per person —
+ * by the second election the answer is about the app's novelty wearing off, which
+ * is not the statistic this exists to produce. Re-asking also reads as nagging to
+ * exactly the people engaged enough to try a second theme.
+ */
+export const EASE_ASKED_KEY = 'ols.ease-asked.v1'
+
+/**
  * Votes accepted per IP hash per theme.
  *
  * Not 1. A classroom, an office, or a conference room shares a single public IP,

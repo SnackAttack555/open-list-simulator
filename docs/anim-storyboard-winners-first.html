@@ -1,0 +1,264 @@
+<!doctype html><meta charset="utf-8">
+<title>Results flow — winners first, three variations</title>
+<style>
+  body{font:15px/1.5 ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;background:#f7f7f5;color:#14161a;margin:0 auto;padding:30px 26px 70px;max-width:1240px}
+  h1{font-size:26px;margin:0 0 4px} h2{font-size:20px;margin:40px 0 2px}
+  .sub{color:#5a6069;margin:0 0 10px}
+  .diag{background:#fff;border:1px solid #d9dade;border-radius:12px;padding:14px 18px;margin:16px 0}
+  .diag li{margin:4px 0}
+  .strip{display:flex;flex-wrap:wrap;gap:14px;padding:10px 2px 4px}
+  .panel{width:252px;min-height:330px;background:#fff;border:1px solid #d9dade;border-radius:14px;padding:12px;box-sizing:border-box;position:relative;flex-shrink:0}
+  .knum{position:absolute;top:8px;right:11px;font-size:11px;color:#c2c6cc}
+  .ft{font-weight:600;font-size:12.5px;margin-bottom:10px;padding-right:16px;line-height:1.35}
+  .cap{font-size:12px;color:#5a6069;margin-top:9px;line-height:1.45;border-top:1px solid #eceef0;padding-top:7px}
+  .new{border-color:#2f6f5e;box-shadow:0 0 0 2px rgba(47,111,94,.13)}
+  .cut{border-color:#b0121a;box-shadow:0 0 0 2px rgba(176,18,26,.11)}
+  .tag{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;border-radius:4px;padding:1.5px 6px;margin-bottom:7px}
+  .tag.n{background:#2f6f5e;color:#fff} .tag.c{background:#b0121a;color:#fff} .tag.s{background:#eceef0;color:#5a6069}
+  .brow{margin-bottom:15px} .blab{display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:3px}
+  .track{position:relative;width:100%;height:13px;background:#eceef0;border-radius:7px}
+  .fill{position:absolute;left:0;top:0;height:13px;border-radius:7px}
+  .gl{position:absolute;top:-4px;bottom:-4px;width:0;border-left:1.5px dashed #a7adb5;z-index:2}
+  .seat{display:inline-flex;width:15px;height:15px;border-radius:4px;color:#fff;font-size:10px;font-weight:700;align-items:center;justify-content:center;margin-right:3px}
+  .seat.lo{background:#fff!important;border:1.5px dashed}
+  .quota{background:#f7f7f5;border:1px solid #e3e5e8;border-radius:9px;padding:7px 9px;font-size:11.5px;margin-top:4px}
+  .card{border:1px solid #d9dade;border-radius:11px;overflow:hidden}
+  .chead{color:#fff;font-size:11.5px;font-weight:600;padding:6px 9px;display:flex;justify-content:space-between}
+  .crow{display:flex;align-items:center;gap:6px;padding:5.5px 9px;border-top:1px solid #eceef0;font-size:11.5px}
+  .cname{width:92px;flex-shrink:0} .ctrack{flex:1;height:7px;background:#eceef0;border-radius:4px;overflow:hidden}
+  .cfill{display:block;height:7px;border-radius:4px} .cvotes{font-size:10.5px;width:22px;text-align:right;color:#5a6069}
+  .winrow{background:rgba(26,110,168,.09);font-weight:600}
+  .wlist{list-style:none;padding:0;margin:0}
+  .wlist li{display:flex;align-items:center;gap:7px;padding:5.5px 2px;border-bottom:1px solid #eceef0;font-size:11.5px}
+  .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+  .wlist .who{font-weight:600} .wlist .pty{color:#5a6069;font-size:10.5px}
+  .pay{border:2px solid;border-radius:11px;padding:9px 10px;font-size:11.5px;line-height:1.5}
+  .stat{margin-top:9px;font-size:12px}
+  .dots{display:grid;grid-template-columns:repeat(14,1fr);gap:3px;margin:4px 0 8px}
+  .dots i{display:block;width:7px;height:7px;border-radius:50%;background:#c9ccd1}
+  table{border-collapse:collapse;background:#fff;border:1px solid #d9dade;margin-top:16px;font-size:13.5px;width:100%}
+  th,td{border:1px solid #d9dade;padding:9px 12px;text-align:left;vertical-align:top}
+  th{background:#eef0f2;font-size:12.5px}
+  .rec{background:#fff;border:1px solid #d9dade;border-left:4px solid #2f4858;border-radius:10px;padding:15px 19px;margin-top:26px}
+  .flowline{font-size:12.5px;color:#5a6069;margin:6px 0 0}
+  .flowline b{color:#14161a}
+  code{background:#eef0f2;border-radius:4px;padding:1px 5px;font-size:12.5px}
+</style>
+
+<h1>Winners first — three ways to order the results</h1>
+<p class="sub">Storyboards, not final art. One running example throughout: <b>Detroit Sports Legends, 1,000 votes, 5 seats</b>, so a seat takes 200 votes (20%). Tigers 34% · Lions 26% · Red Wings 21% · Pistons 19%. Three seats are won outright and <b>two are decided on leftover votes</b>. You voted for <b>Amon-Ra St.&nbsp;Brown</b> (Lions party).</p>
+
+<div class="diag"><b>What changes, and the one question it raises</b>
+<ul>
+<li><b>A — shipped today.</b> The reasoning runs first and the winners arrive at the end, as a conclusion you've been walked to.</li>
+<li><b>B — winners first, explanation intact.</b> Open with the five winners, then show how they got there. Same eight beats, resequenced.</li>
+<li><b>C — winners first, no Act 2 animation.</b> As B, but the "who fills the seat" animation is replaced by two sentences.</li>
+</ul>
+The real decision is C. Act 2 is the only place the app shows <i>voters inside a party deciding which of their own candidates sits</i> — the thing that makes this an <b>open</b> list rather than a party-ranked one. Cutting it buys about 12 seconds.</div>
+
+<h2>A · Current flow — explanation first, winners as the payoff</h2>
+<p class="flowline"><b>Order:</b> count → gather → seats → leftover → inside your party → winners → your vote → winner-take-all</p>
+<div class="strip">
+
+  <div class="panel"><div class="knum">A1</div><span class="tag s">Act 1</span>
+    <div class="ft">1,000 votes were cast.</div>
+    <div class="dots">
+      <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+      <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+      <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+      <i></i><i></i><i></i><i></i><i></i><i style="background:#1a6ea8;box-shadow:0 0 0 2px rgba(26,110,168,.3)"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+      <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+    </div>
+    <div class="cap">Every dot is about 14 votes, and the colored dot includes yours.</div></div>
+
+  <div class="panel"><div class="knum">A2</div><span class="tag s">Act 1</span>
+    <div class="ft">Every vote joins the party it was cast for.</div>
+    <div class="brow"><div class="blab"><span>Tigers party</span><b>340</b></div><div class="track"><div class="fill" style="width:34%;background:#c2540f"></div></div></div>
+    <div class="brow"><div class="blab"><span>Lions party</span><b>260</b></div><div class="track"><div class="fill" style="width:26%;background:#1a6ea8"></div></div></div>
+    <div class="brow"><div class="blab"><span>Red Wings party</span><b>210</b></div><div class="track"><div class="fill" style="width:21%;background:#b0121a"></div></div></div>
+    <div class="brow"><div class="blab"><span>Pistons party</span><b>190</b></div><div class="track"><div class="fill" style="width:19%;background:#2f6f5e"></div></div></div>
+    <div class="cap">The dots fly into four bars. Your dot lands in the Lions bar.</div></div>
+
+  <div class="panel"><div class="knum">A3</div><span class="tag s">Act 1</span>
+    <div class="ft">It takes 20% of the votes to win 1 of the 5 seats. Right now that's 200 votes.</div>
+    <div class="brow"><div class="blab"><span>Tigers</span><span><i class="seat" style="background:#c2540f">★</i></span></div><div class="track"><div class="fill" style="width:34%;background:#c2540f"></div><div class="gl" style="left:20%"></div><div class="gl" style="left:40%"></div></div></div>
+    <div class="brow"><div class="blab"><span>Lions</span><span><i class="seat" style="background:#1a6ea8">★</i></span></div><div class="track"><div class="fill" style="width:26%;background:#1a6ea8"></div><div class="gl" style="left:20%"></div><div class="gl" style="left:40%"></div></div></div>
+    <div class="brow"><div class="blab"><span>Red Wings</span><span><i class="seat" style="background:#b0121a">★</i></span></div><div class="track"><div class="fill" style="width:21%;background:#b0121a"></div><div class="gl" style="left:20%"></div></div></div>
+    <div class="brow"><div class="blab"><span>Pistons</span><span style="color:#98a0a8">—</span></div><div class="track"><div class="fill" style="width:19%;background:#2f6f5e"></div><div class="gl" style="left:20%"></div></div></div>
+    <div class="cap">Every group of 200 votes wins one seat — that fills 3 of the 5.</div></div>
+
+  <div class="panel"><div class="knum">A4</div><span class="tag s">Act 1</span>
+    <div class="ft">2 seats are still open, and no party has another full group of 200.</div>
+    <div class="brow"><div class="blab"><span>Pistons</span><b>190 left over</b></div><div class="track"><div class="fill" style="width:19%;background:#2f6f5e;opacity:.45"></div></div><div style="margin-top:4px"><i class="seat lo" style="border-color:#2f6f5e;color:#2f6f5e">+</i></div></div>
+    <div class="brow"><div class="blab"><span>Tigers</span><b>140 left over</b></div><div class="track"><div class="fill" style="width:14%;background:#c2540f;opacity:.45"></div></div><div style="margin-top:4px"><i class="seat lo" style="border-color:#c2540f;color:#c2540f">+</i></div></div>
+    <div class="brow"><div class="blab"><span>Lions</span><span style="color:#5a6069">60 left over</span></div><div class="track"><div class="fill" style="width:6%;background:#1a6ea8;opacity:.45"></div></div></div>
+    <div class="brow"><div class="blab"><span>Red Wings</span><span style="color:#5a6069">10 left over</span></div><div class="track"><div class="fill" style="width:1%;background:#b0121a;opacity:.45"></div></div></div>
+    <div class="cap">Pistons party and Tigers party had the most leftover votes, so they win the last seats, shown with a +. ★ marks the seats already won outright.</div></div>
+
+  <div class="panel"><div class="knum">A5</div><span class="tag s">Act 2</span>
+    <div class="ft">So who fills the Lions party's seat?</div>
+    <div class="card">
+      <div class="chead" style="background:#1a6ea8"><span>🦁 Lions party</span><span>1 seat</span></div>
+      <div class="crow"><span class="cname">Amon-Ra St. Brown</span><span class="ctrack"><span class="cfill" style="width:50%;background:#1a6ea8"></span></span><span class="cvotes">48</span></div>
+      <div class="crow winrow"><span class="cname">Barry Sanders ★</span><span class="ctrack"><span class="cfill" style="width:100%;background:#1a6ea8"></span></span><span class="cvotes">96</span></div>
+      <div class="crow"><span class="cname">Bobby Layne</span><span class="ctrack"><span class="cfill" style="width:33%;background:#1a6ea8"></span></span><span class="cvotes">32</span></div>
+      <div class="crow"><span class="cname">Calvin Johnson</span><span class="ctrack"><span class="cfill" style="width:65%;background:#1a6ea8"></span></span><span class="cvotes">62</span></div>
+      <div class="crow"><span class="cname">Night Train Lane</span><span class="ctrack"><span class="cfill" style="width:23%;background:#1a6ea8"></span></span><span class="cvotes">22</span></div>
+    </div>
+    <div class="cap">Names in <b>ballot order</b> (alphabetical), bars grow, then the list re-sorts by votes. The Lions party wins 1 seat. The person with the most votes wins.</div></div>
+
+  <div class="panel"><div class="knum">A6</div>
+    <div class="ft">All 5 winners</div>
+    <ul class="wlist">
+      <li><span class="dot" style="background:#c2540f"></span><span><span class="who">Ty Cobb</span><br><span class="pty">Tigers party · 118 votes</span></span></li>
+      <li><span class="dot" style="background:#1a6ea8"></span><span><span class="who">Barry Sanders</span><br><span class="pty">Lions party · 96 votes</span></span></li>
+      <li><span class="dot" style="background:#c2540f"></span><span><span class="who">Miguel Cabrera</span><br><span class="pty">Tigers party · 79 votes</span></span></li>
+      <li><span class="dot" style="background:#b0121a"></span><span><span class="who">Gordie Howe</span><br><span class="pty">Red Wings party · 71 votes</span></span></li>
+      <li><span class="dot" style="background:#2f6f5e"></span><span><span class="who">Isiah Thomas</span><br><span class="pty">Pistons party · 63 votes</span></span></li>
+    </ul>
+    <div class="cap">Arrives last, as the conclusion of the argument.</div></div>
+
+  <div class="panel"><div class="knum">A7</div>
+    <div class="ft">Your vote</div>
+    <div class="pay" style="border-color:#1a6ea8"><b>Amon-Ra St. Brown</b> didn't win a seat, but the Lions party won 1 — your vote still elected someone from your party.</div>
+    <div class="stat"><b>100% of voters</b> helped elect someone from their party.</div>
+    <div class="cap">The personal payoff, then the collective one.</div></div>
+
+  <div class="panel"><div class="knum">A8</div>
+    <div class="ft">What if this was winner-take-all, like most US elections?</div>
+    <div style="margin:6px 0 8px"><i class="seat" style="background:#c2540f">★</i><i class="seat" style="background:#c2540f">★</i><i class="seat" style="background:#c2540f">★</i><i class="seat" style="background:#c2540f">★</i><i class="seat" style="background:#c2540f">★</i></div>
+    <div style="font-size:11.5px;line-height:1.5">This district elected 5 people. Under traditional (winner take all) rules, there would be 5 nearby districts and the <b>Tigers party</b> would have won all of them even though they only won <b>34.0%</b> of the vote. Voters supporting the other parties, who made up <b>66.0%</b> of voters, would elect no representative from these districts.</div>
+    <div class="cap">Voters represented: 34% under winner-take-all, 100% the way you just voted.</div></div>
+
+</div>
+
+<h2>B · Winners first — same explanation, resequenced</h2>
+<p class="flowline"><b>Order:</b> <b>winners</b> → count → gather → seats → leftover → inside your party → your vote → winner-take-all</p>
+<div class="strip">
+
+  <div class="panel new"><div class="knum">B1</div><span class="tag n">New opening</span>
+    <div class="ft">Here's who won.</div>
+    <ul class="wlist">
+      <li><span class="dot" style="background:#c2540f"></span><span><span class="who">Ty Cobb</span><br><span class="pty">Tigers party</span></span></li>
+      <li><span class="dot" style="background:#1a6ea8"></span><span><span class="who">Barry Sanders</span><br><span class="pty">Lions party</span></span></li>
+      <li><span class="dot" style="background:#c2540f"></span><span><span class="who">Miguel Cabrera</span><br><span class="pty">Tigers party</span></span></li>
+      <li><span class="dot" style="background:#b0121a"></span><span><span class="who">Gordie Howe</span><br><span class="pty">Red Wings party</span></span></li>
+      <li><span class="dot" style="background:#2f6f5e"></span><span><span class="who">Isiah Thomas</span><br><span class="pty">Pistons party</span></span></li>
+    </ul>
+    <div class="cap">No vote counts yet — just the outcome, and four colors visibly sharing five seats. Then: <b>"Here's how they were chosen."</b></div></div>
+
+  <div class="panel"><div class="knum">B2</div><span class="tag s">= A1</span>
+    <div class="ft">1,000 votes were cast.</div>
+    <div class="dots">
+      <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+      <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+      <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+      <i></i><i></i><i></i><i></i><i></i><i style="background:#1a6ea8;box-shadow:0 0 0 2px rgba(26,110,168,.3)"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+      <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+    </div>
+    <div class="cap">Unchanged. Every dot is about 14 votes, and the colored dot includes yours.</div></div>
+
+  <div class="panel"><div class="knum">B3</div><span class="tag s">= A2</span>
+    <div class="ft">Every vote joins the party it was cast for.</div>
+    <div class="brow"><div class="blab"><span>Tigers party</span><b>340</b></div><div class="track"><div class="fill" style="width:34%;background:#c2540f"></div></div></div>
+    <div class="brow"><div class="blab"><span>Lions party</span><b>260</b></div><div class="track"><div class="fill" style="width:26%;background:#1a6ea8"></div></div></div>
+    <div class="brow"><div class="blab"><span>Red Wings party</span><b>210</b></div><div class="track"><div class="fill" style="width:21%;background:#b0121a"></div></div></div>
+    <div class="brow"><div class="blab"><span>Pistons party</span><b>190</b></div><div class="track"><div class="fill" style="width:19%;background:#2f6f5e"></div></div></div>
+    <div class="cap">Unchanged.</div></div>
+
+  <div class="panel"><div class="knum">B4</div><span class="tag s">= A3</span>
+    <div class="ft">It takes 20% of the votes to win 1 of the 5 seats. Right now that's 200 votes.</div>
+    <div class="brow"><div class="blab"><span>Tigers</span><span><i class="seat" style="background:#c2540f">★</i></span></div><div class="track"><div class="fill" style="width:34%;background:#c2540f"></div><div class="gl" style="left:20%"></div><div class="gl" style="left:40%"></div></div></div>
+    <div class="brow"><div class="blab"><span>Lions</span><span><i class="seat" style="background:#1a6ea8">★</i></span></div><div class="track"><div class="fill" style="width:26%;background:#1a6ea8"></div><div class="gl" style="left:20%"></div><div class="gl" style="left:40%"></div></div></div>
+    <div class="brow"><div class="blab"><span>Red Wings</span><span><i class="seat" style="background:#b0121a">★</i></span></div><div class="track"><div class="fill" style="width:21%;background:#b0121a"></div><div class="gl" style="left:20%"></div></div></div>
+    <div class="brow"><div class="blab"><span>Pistons</span><span style="color:#98a0a8">—</span></div><div class="track"><div class="fill" style="width:19%;background:#2f6f5e"></div><div class="gl" style="left:20%"></div></div></div>
+    <div class="cap">Now reads as <i>confirmation</i> of B1 rather than suspense — three of the five you already saw.</div></div>
+
+  <div class="panel"><div class="knum">B5</div><span class="tag s">= A4</span>
+    <div class="ft">2 seats are still open, and no party has another full group of 200.</div>
+    <div class="brow"><div class="blab"><span>Pistons</span><b>190 left over</b></div><div class="track"><div class="fill" style="width:19%;background:#2f6f5e;opacity:.45"></div></div><div style="margin-top:4px"><i class="seat lo" style="border-color:#2f6f5e;color:#2f6f5e">+</i></div></div>
+    <div class="brow"><div class="blab"><span>Tigers</span><b>140 left over</b></div><div class="track"><div class="fill" style="width:14%;background:#c2540f;opacity:.45"></div></div><div style="margin-top:4px"><i class="seat lo" style="border-color:#c2540f;color:#c2540f">+</i></div></div>
+    <div class="brow"><div class="blab"><span>Lions</span><span style="color:#5a6069">60 left over</span></div><div class="track"><div class="fill" style="width:6%;background:#1a6ea8;opacity:.45"></div></div></div>
+    <div class="brow"><div class="blab"><span>Red Wings</span><span style="color:#5a6069">10 left over</span></div><div class="track"><div class="fill" style="width:1%;background:#b0121a;opacity:.45"></div></div></div>
+    <div class="cap">Pistons party and Tigers party had the most leftover votes, so they win the last seats, shown with a +.</div></div>
+
+  <div class="panel"><div class="knum">B6</div><span class="tag s">= A5</span>
+    <div class="ft">So who fills the Lions party's seat?</div>
+    <div class="card">
+      <div class="chead" style="background:#1a6ea8"><span>🦁 Lions party</span><span>1 seat</span></div>
+      <div class="crow"><span class="cname">Amon-Ra St. Brown</span><span class="ctrack"><span class="cfill" style="width:50%;background:#1a6ea8"></span></span><span class="cvotes">48</span></div>
+      <div class="crow winrow"><span class="cname">Barry Sanders ★</span><span class="ctrack"><span class="cfill" style="width:100%;background:#1a6ea8"></span></span><span class="cvotes">96</span></div>
+      <div class="crow"><span class="cname">Bobby Layne</span><span class="ctrack"><span class="cfill" style="width:33%;background:#1a6ea8"></span></span><span class="cvotes">32</span></div>
+      <div class="crow"><span class="cname">Calvin Johnson</span><span class="ctrack"><span class="cfill" style="width:65%;background:#1a6ea8"></span></span><span class="cvotes">62</span></div>
+      <div class="crow"><span class="cname">Night Train Lane</span><span class="ctrack"><span class="cfill" style="width:23%;background:#1a6ea8"></span></span><span class="cvotes">22</span></div>
+    </div>
+    <div class="cap">Kept in full. This is the only frame that answers "who decided it was <i>Barry</i>?"</div></div>
+
+  <div class="panel"><div class="knum">B7</div><span class="tag s">= A7</span>
+    <div class="ft">Your vote</div>
+    <div class="pay" style="border-color:#1a6ea8"><b>Amon-Ra St. Brown</b> didn't win a seat, but the Lions party won 1 — your vote still elected someone from your party.</div>
+    <div class="stat"><b>100% of voters</b> helped elect someone from their party.</div>
+    <div class="cap">Unchanged.</div></div>
+
+  <div class="panel"><div class="knum">B8</div><span class="tag s">= A8</span>
+    <div class="ft">What if this was winner-take-all, like most US elections?</div>
+    <div style="margin:6px 0 8px"><i class="seat" style="background:#c2540f">★</i><i class="seat" style="background:#c2540f">★</i><i class="seat" style="background:#c2540f">★</i><i class="seat" style="background:#c2540f">★</i><i class="seat" style="background:#c2540f">★</i></div>
+    <div style="font-size:11.5px;line-height:1.5">…the <b>Tigers party</b> would have won all of them even though they only won <b>34.0%</b> of the vote. Voters supporting the other parties, who made up <b>66.0%</b> of voters, would elect no representative from these districts.</div>
+    <div class="cap">Stays at the end. The contrast only bites once the fair result is understood.</div></div>
+
+</div>
+
+<h2>C · Winners first, Act 2 replaced by two sentences</h2>
+<p class="flowline"><b>Order:</b> winners → count → gather → seats → leftover → <b>statement</b> → your vote → winner-take-all &nbsp;·&nbsp; B1–B5 identical to above, so only the changed frame is shown.</p>
+<div class="strip">
+
+  <div class="panel" style="opacity:.5"><div class="knum">C1–C5</div><span class="tag s">Same as B1–B5</span>
+    <div class="ft">Winners → count → gather → seats → leftover</div>
+    <div style="font-size:11.5px;color:#5a6069;line-height:1.6;margin-top:10px">
+      Unchanged from column B.<br><br>
+      The reader arrives here knowing: the five winners, that a seat takes 200 votes, that three parties earned one outright, and that two more went to the biggest leftovers.<br><br>
+      What they do <i>not</i> yet know is why the Lions seat went to Barry Sanders.
+    </div></div>
+
+  <div class="panel cut"><div class="knum">C6</div><span class="tag c">Replaces the animation</span>
+    <div class="ft">The Lions party's seat</div>
+    <div class="pay" style="border-color:#1a6ea8;margin-bottom:9px">
+      The <b>Lions party</b> gets one seat. <b>Barry Sanders</b> got the most votes and wins that seat.
+    </div>
+    <div class="pay" style="border-color:#1a6ea8">
+      <b>Amon-Ra St. Brown</b> didn't win a seat — your vote still elected someone from your party.
+    </div>
+    <div class="cap">Two static sentences. No ballot order, no bars, no re-sort. Saves roughly 12 seconds and two taps.</div></div>
+
+  <div class="panel"><div class="knum">C7</div><span class="tag s">= A7 / B7</span>
+    <div class="ft">100% of voters</div>
+    <div class="stat" style="margin-top:2px"><b>100% of voters</b> helped elect someone from their party.</div>
+    <div class="cap">Note that C6 already delivered the personal payoff, so this frame keeps only the collective number — otherwise "your vote still elected someone" appears twice in a row.</div></div>
+
+  <div class="panel"><div class="knum">C8</div><span class="tag s">= A8 / B8</span>
+    <div class="ft">What if this was winner-take-all, like most US elections?</div>
+    <div style="margin:6px 0 8px"><i class="seat" style="background:#c2540f">★</i><i class="seat" style="background:#c2540f">★</i><i class="seat" style="background:#c2540f">★</i><i class="seat" style="background:#c2540f">★</i><i class="seat" style="background:#c2540f">★</i></div>
+    <div style="font-size:11.5px;line-height:1.5">…the <b>Tigers party</b> would have won all of them even though they only won <b>34.0%</b> of the vote. Voters supporting the other parties, who made up <b>66.0%</b> of voters, would elect no representative from these districts.</div>
+    <div class="cap">Unchanged.</div></div>
+
+</div>
+
+<h2>What each version teaches</h2>
+<table>
+<tr><th style="width:29%">Idea</th><th style="width:23.6%">A · current</th><th style="width:23.7%">B · winners first</th><th style="width:23.7%">C · winners first, no Act 2</th></tr>
+<tr><td>Seats split in proportion to votes</td><td>Shown</td><td>Shown</td><td>Shown</td></tr>
+<tr><td>A seat costs 20% of the vote</td><td>Shown</td><td>Shown</td><td>Shown</td></tr>
+<tr><td>Leftover votes still win seats</td><td>Shown</td><td>Shown</td><td>Shown</td></tr>
+<tr><td><b>Voters, not the party, pick which candidate sits</b></td><td>Shown — bars, ballot order, re-sort</td><td>Shown — identical</td><td><b>Asserted in one sentence.</b> "Got the most votes" is stated but never demonstrated</td></tr>
+<tr><td><b>Ballot order decides nothing</b></td><td>Shown — the first name alphabetically (Amon-Ra) visibly loses to the second (Barry)</td><td>Shown — identical</td><td><b>Lost.</b> Ballot order never appears, so there is nothing to disprove</td></tr>
+<tr><td>Your losing vote still elected someone</td><td>Shown</td><td>Shown</td><td>Shown, earlier</td></tr>
+<tr><td>Winner-take-all wastes most votes</td><td>Shown</td><td>Shown</td><td>Shown</td></tr>
+<tr><td>Taps to finish</td><td>8</td><td>8</td><td>6</td></tr>
+</table>
+
+<div class="rec"><b>Recommendation: B.</b>
+<p style="margin:8px 0 0">Opening with the winners is a clear improvement over A and costs nothing. People who just voted want to know what happened; making them sit through four beats of arithmetic first spends attention before it has been earned. Leading with the outcome also does quiet work the current order can't — five seats in four colors is the proportional result <i>visible in one glance</i>, before a single number appears. "Here's how they were chosen" then reads as an offer rather than a lecture, and every later beat lands as confirmation of something already seen.</p>
+<p style="margin:8px 0 0">C is the one I'd push back on. The two frames it removes are the only place the app shows an <b>open</b> list working — that voters inside a party, not the party, decide which of their candidates gets the seat. Everything else in the flow would be equally true of a closed-list system where the party ranks its own candidates. The alphabetical ballot order was chosen precisely so this frame demonstrates itself: Amon-Ra St. Brown sits first on the ballot and loses to Barry Sanders, second. C keeps the sentence "got the most votes" but deletes the evidence, and a claim without evidence is the thing a skeptical reader discounts first.</p>
+<p style="margin:8px 0 0">If the goal behind C is length, the cheaper cut is <i>within</i> Act 2 rather than of it: drop the separate re-sort step and let the bars grow directly into sorted order. One tap instead of two, about 5 of the 12 seconds, and the ballot-order lesson survives intact.</p>
+<p style="margin:8px 0 0"><b>Worth testing rather than deciding:</b> whether "here's who won" up front makes people stop reading. It's the plausible failure mode of B and C both — curiosity satisfied, attention gone — and it's exactly what the ease question and a short click-through measurement would catch.</p>
+</div>
