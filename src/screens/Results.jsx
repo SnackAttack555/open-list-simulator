@@ -65,6 +65,11 @@ export default function Results({ theme, myVote, results, error, onRestart }) {
     ? {}
     : { initial: { opacity: 0, y: 10 }, animate: { opacity: 1, y: 0 } }
 
+  // Rounded once and the remainder derived from it, never rounded separately:
+  // two independent Math.rounds of 37.5 and 62.5 both go up and the sentence
+  // claims 101% of voters.
+  const wtaPct = Math.round(result.wta.pctRepresented)
+
   return (
     <div className="mx-auto w-full max-w-[520px] px-5 pt-6 pb-12">
       <h1 className="text-2xl font-semibold tracking-tight">{theme.name}</h1>
@@ -158,31 +163,40 @@ export default function Results({ theme, myVote, results, error, onRestart }) {
               className="mt-3 rounded-2xl border border-[var(--line)] bg-[var(--card)] p-4"
             >
               <p className="text-[15px] leading-relaxed">
-                This district elected {result.seats} people. Under traditional (winner take
-                all) rules, there would be {result.seats} nearby districts and the{' '}
+                This district elected {result.seats} {theme.nounPlural ?? 'people'}. Under
+                traditional (winner take all) rules, there would be {result.seats} nearby
+                districts and the{' '}
                 <strong>
                   <span aria-hidden="true">{result.wta.listEmoji}</span>{' '}
                   {partyName(result.wta.listName)}
                 </strong>{' '}
                 would have won all of them even though they only won{' '}
-                <strong>{result.wta.pctRepresented.toFixed(1)}%</strong> of the vote. Voters
-                supporting the other parties, who made up{' '}
-                <strong>{(100 - result.wta.pctRepresented).toFixed(1)}%</strong> of voters,
-                would elect no representative from these districts.
+                <strong>{wtaPct}%</strong> of the vote. Voters supporting the other parties,
+                who made up <strong>{100 - wtaPct}%</strong> of voters, would elect no
+                representative from these districts.
               </p>
-              <div className="mt-3 flex gap-1.5">
-                {Array.from({ length: SEATS }, (_, i) => (
-                  <motion.span
-                    key={i}
-                    initial={reduced ? false : { scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ delay: reduced ? 0 : i * 0.09 }}
-                    className="grid size-7 place-items-center rounded-md text-[11px] font-bold text-white"
-                    style={{ backgroundColor: result.wta.color }}
-                  >
-                    ★
-                  </motion.span>
-                ))}
+              {/* The party owning the five stars, named next to them. Five coloured
+                  squares alone leave the reader matching a swatch against a
+                  sentence two lines up. */}
+              <div className="mt-3 flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
+                <span className="flex gap-1.5">
+                  {Array.from({ length: SEATS }, (_, i) => (
+                    <motion.span
+                      key={i}
+                      initial={reduced ? false : { scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ delay: reduced ? 0 : i * 0.09 }}
+                      className="grid size-7 place-items-center rounded-md text-[11px] font-bold text-white"
+                      style={{ backgroundColor: result.wta.color }}
+                    >
+                      ★
+                    </motion.span>
+                  ))}
+                </span>
+                <span className="text-sm font-semibold" style={{ color: result.wta.color }}>
+                  <span aria-hidden="true">{result.wta.listEmoji}</span>{' '}
+                  {partyName(result.wta.listName)}
+                </span>
               </div>
               <ul className="mt-3 flex flex-col gap-1 text-sm">
                 {result.wta.winners.map((cand) => (
@@ -190,9 +204,8 @@ export default function Results({ theme, myVote, results, error, onRestart }) {
                 ))}
               </ul>
               <p className="mt-4 border-t border-[var(--line)] pt-3 text-[15px]">
-                Voters represented: <strong>{Math.round(result.wta.pctRepresented)}%</strong>{' '}
-                under winner-take-all, <strong>{Math.round(result.pctRepresented)}%</strong> the
-                way you just voted.
+                Voters represented: <strong>{wtaPct}%</strong> under winner-take-all,{' '}
+                <strong>{Math.round(result.pctRepresented)}%</strong> the way you just voted.
               </p>
               <ul className="mt-2 flex flex-col gap-1 text-sm text-[var(--ink-soft)]">
                 {result.lists
@@ -200,7 +213,7 @@ export default function Results({ theme, myVote, results, error, onRestart }) {
                   .map((l) => (
                     <li key={l.id}>
                       The {partyName(l)} would lose {l.seats} seat{l.seats === 1 ? '' : 's'} on{' '}
-                      {l.votePct.toFixed(1)}% of the vote
+                      {Math.round(l.votePct)}% of the vote
                     </li>
                   ))}
               </ul>

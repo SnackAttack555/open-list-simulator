@@ -200,8 +200,6 @@ export default function Ballot({ theme, selection, onSelect, onCast, onBack }) {
 
   let flatCursor = -1
 
-  const noun = theme.noun ?? 'person'
-
   return (
     <div className="mx-auto flex w-full max-w-[520px] flex-1 flex-col lg:max-w-[1140px]">
       <header className="px-4 pt-4">
@@ -250,13 +248,19 @@ export default function Ballot({ theme, selection, onSelect, onCast, onBack }) {
         })}
       </nav>
 
-      {/* The entire instruction. It sits against the ballot rather than up in the
-          header because the second sentence is the one idea the whole app exists to
-          land, and it has to be readable at the moment of choosing — not recalled
-          from a subtitle scrolled off the top. */}
-      <p className="mt-3 px-4 text-[15px] leading-snug text-[var(--ink)]">
-        Vote for one {noun}. Your vote also counts toward that {noun}&apos;s party.
-      </p>
+      {/* The instruction sits against the ballot rather than up in the header,
+          because it has to be readable at the moment of choosing rather than
+          recalled from a subtitle scrolled off the top.
+
+          Two lines, not one sentence: the first is the whole task and has to be
+          impossible to miss, the second is the idea the app exists to teach. Run
+          together at one size they competed, and people skimmed both. */}
+      <div className="mt-3 px-4">
+        <p className="text-[19px] leading-tight font-semibold">Vote for one candidate.</p>
+        <p className="mt-1 text-[15px] leading-snug text-[var(--ink-soft)]">
+          Your vote also counts toward that candidate&apos;s party.
+        </p>
+      </div>
 
       {/* One radio group spanning every card: one mark for the whole ballot. */}
       <div
@@ -347,7 +351,10 @@ export default function Ballot({ theme, selection, onSelect, onCast, onBack }) {
       {/* Sticky bar: the selection survives swiping, so you can wander the whole
           ballot holding your choice. */}
       <div className="sticky bottom-0 mt-auto border-t border-[var(--line)] bg-[var(--paper)]/95 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur">
-        <p className="mb-2 min-h-5 text-center text-sm" aria-live="polite">
+        {/* Sized up to match the weight of the act: this is the only confirmation
+            of who you are about to elect, and it has to survive a glance from
+            somebody whose thumb is already over the button. */}
+        <p className="mb-2 min-h-7 text-center text-[17px]" aria-live="polite">
           {selectedName ? (
             <>
               <span className="text-[var(--ink-soft)]">Your vote: </span>

@@ -27,15 +27,55 @@ import { ballotOrder, partyName } from '../data/index.js'
  * than a picture.
  */
 
-const DOTS_PER_SEAT = 20 // one group = one seat, so 5 seats = 100 dots
 const WIDTH = 320
 
 // Everything below is in svg user units, so it scales as one piece.
-const GRID = { cols: 10, x0: 20, dx: 30, y0: 16, dy: 20 }
 const GROUP = { x: 4, w: 214, pad: 10, rowH: 19, labelH: 16, partyGap: 10 }
 const STAR = { x: GROUP.x + GROUP.w + 8, size: 18 }
-const DOT_R = 3.4
-const dotX = (i) => GROUP.x + GROUP.pad + i * ((GROUP.w - GROUP.pad * 2) / (DOTS_PER_SEAT - 1))
+
+/**
+ * One dot is ten votes.
+ *
+ * A fixed dot count would make the scale drift as an election grows — the same
+ * picture meaning 8 votes per dot today and 40 next month, which quietly breaks
+ * the one thing the opening beat is for. So the dot *count* grows instead.
+ *
+ * What limits that is not the opening grid but the group rows: a group is one
+ * seat's worth of votes drawn as a single row of fixed width, so dots-per-seat
+ * is the real constraint. Past about 40 the spacing inside a row falls below a
+ * dot's own diameter and the group reads as a smudge. Rather than let it degrade,
+ * the scale steps up the ladder until a row is legible again, and the caption
+ * states whichever value it landed on. In practice 10 holds to ~2,000 votes per
+ * election, which is well past anything this has seen.
+ */
+const VOTES_PER_DOT_LADDER = [10, 20, 25, 50, 100, 200, 500, 1000]
+const MAX_DOTS_PER_SEAT = 40
+
+function chooseScale(quota) {
+  for (const votesPerDot of VOTES_PER_DOT_LADDER) {
+    const dotsPerSeat = Math.round(quota / votesPerDot)
+    if (dotsPerSeat <= MAX_DOTS_PER_SEAT) {
+      return { votesPerDot, dotsPerSeat: Math.max(4, dotsPerSeat) }
+    }
+  }
+  const votesPerDot = VOTES_PER_DOT_LADDER[VOTES_PER_DOT_LADDER.length - 1]
+  return { votesPerDot, dotsPerSeat: Math.max(4, Math.round(quota / votesPerDot)) }
+}
+
+/**
+ * The opening grid, sized to hold however many dots this election needs.
+ *
+ * Deliberately wide rather than square: the block has to share one phone screen
+ * with a headline above it and a caption below, so height is the scarce axis.
+ */
+function gridFor(count) {
+  const cols = Math.max(10, Math.min(30, Math.ceil(Math.sqrt(Math.max(1, count) * 1.9))))
+  const dx = (WIDTH - 24) / Math.max(1, cols - 1)
+  return { cols, x0: 12, dx, y0: 16, dy: Math.min(dx, 20) }
+}
+
+const rowSpacing = (dotsPerSeat) => (GROUP.w - GROUP.pad * 2) / Math.max(1, dotsPerSeat - 1)
+const dotXFor = (dotsPerSeat) => (i) => GROUP.x + GROUP.pad + i * rowSpacing(dotsPerSeat)
 
 export default function SeatStory({ theme, result, myVote, onDone, onFinish }) {
   const reduced = useReducedMotion()
@@ -221,7 +261,13 @@ function DotStage({ model, phase, step, reduced }) {
           )
         })}
 
-      <Dots dots={model.dots} myDot={model.myDot} spread={spread} reduced={reduced} />
+      <Dots
+        dots={model.dots}
+        myDot={model.myDot}
+        dotR={model.dotR}
+        spread={spread}
+        reduced={reduced}
+      />
     </svg>
   )
 }
@@ -245,7 +291,7 @@ function DotStage({ model, phase, step, reduced }) {
  * elements, one property, no orchestration) a CSS transition is both
  * deterministic and cheaper.
  */
-function Dots({ dots, myDot, spread, reduced }) {
+function Dots({ dots, myDot, dotR, spread, reduced }) {
   const ease = reduced
     ? 'none'
     : 'transform .55s cubic-bezier(.22,1,.36,1), fill .35s linear'
@@ -261,7 +307,7 @@ function Dots({ dots, myDot, spread, reduced }) {
           key={dot.id}
           cx={dot.seatPos.x}
           cy={dot.seatPos.y}
-          r={DOT_R}
+          r={dotR}
           // The reader's own vote wears its party colour from the first beat.
           fill={dot.isMine || !spread ? dot.color : '#9aa0a8'}
           style={{ transform: shift(dot), transition: ease }}
@@ -273,7 +319,7 @@ function Dots({ dots, myDot, spread, reduced }) {
         <circle
           cx={myDot.seatPos.x}
           cy={myDot.seatPos.y}
-          r={DOT_R + 2.5}
+          r={dotR + 2.5}
           fill="none"
           stroke={myDot.color}
           strokeWidth="1.6"
@@ -374,7 +420,8 @@ function buildModel(theme, result, myVote) {
   const quota = result.quota
   const noun = theme.noun ?? 'person'
   const nounPlural = theme.nounPlural ?? 'people'
-  const votesPerDot = Math.max(1, Math.round(quota / DOTS_PER_SEAT))
+  const { votesPerDot, dotsPerSeat } = chooseScale(quota)
+  const dotX = dotXFor(dotsPerSeat)
 
   const rows = []
   for (const list of result.lists) {
@@ -384,7 +431,7 @@ function buildModel(theme, result, myVote) {
     // could show a smaller group winning the last seat.
     const partialDots = Math.max(
       0,
-      Math.min(DOTS_PER_SEAT - 1, Math.round((leftoverVotes / quota) * DOTS_PER_SEAT)),
+      Math.min(dotsPerSeat - 1, Math.round((leftoverVotes / quota) * dotsPerSeat)),
     )
     let first = true
     for (let g = 0; g < list.quotaSeats; g += 1) {
@@ -395,7 +442,7 @@ function buildModel(theme, result, myVote) {
         listVotes: list.votes,
         color: list.color,
         kind: 'full',
-        dotCount: DOTS_PER_SEAT,
+        dotCount: dotsPerSeat,
         leftoverVotes: 0,
         first,
       })
@@ -425,7 +472,16 @@ function buildModel(theme, result, myVote) {
     y += GROUP.rowH
   }
   const rowsHeight = y + 6
-  const gridHeight = GRID.y0 + Math.ceil(100 / GRID.cols) * GRID.dy + 6
+
+  const totalDots = rows.reduce((n, row) => n + row.dotCount, 0)
+  const GRID = gridFor(totalDots)
+  // One radius for both layouts, because it is the same circle translated between
+  // them: whichever layout packs tighter is the one that sets the size.
+  const dotR = Math.max(
+    1.2,
+    Math.min(3.4, 0.3 * Math.min(rowSpacing(dotsPerSeat), GRID.dx, GRID.dy)),
+  )
+  const gridHeight = GRID.y0 + Math.ceil(totalDots / GRID.cols) * GRID.dy + 6
   // One height for every beat, so the card doesn't resize as the story advances.
   const stageHeight = Math.max(rowsHeight, gridHeight)
 
@@ -459,6 +515,26 @@ function buildModel(theme, result, myVote) {
   const leftoverOrder = rows
     .filter((r) => r.kind === 'partial' && r.wonLeftover)
     .sort((a, b) => b.leftoverVotes - a.leftoverVotes) // closest to a full group first
+
+  // Which parties cleared a full group, named for the caption. Taken from the
+  // lists rather than from the drawn rows, because a party with two full groups
+  // owns two rows and would otherwise be named twice.
+  const earned = result.lists.filter((l) => l.quotaSeats > 0)
+  const joinNames = (names) =>
+    names.length === 1
+      ? names[0]
+      : names.length === 2
+        ? `${names[0]} and ${names[1]}`
+        : `${names.slice(0, -1).join(', ')}, and ${names[names.length - 1]}`
+  const earnedSentence =
+    earned.length === 0
+      ? ''
+      : earned.length === 1
+        ? ` The ${earned[0].name} Party wins one seat, shown with a ★.`
+        : earned.every((l) => l.quotaSeats === 1)
+          ? ` The ${joinNames(earned.map((l) => l.name))} Parties each win one seat, shown with a ★.`
+          // A party holding two full groups makes "each win one seat" false.
+          : ` The ${joinNames(earned.map((l) => l.name))} Parties win those seats, shown with a ★.`
 
   const remainderCount = leftoverOrder.length
   const fullSeats = fullGroupOrder.length
@@ -498,12 +574,12 @@ function buildModel(theme, result, myVote) {
     {
       stage: 'dots',
       phase: 'seats',
-      headline: `It takes 20% of the votes to win 1 of the ${result.seats} seats. Right now that’s ${quotaText} votes.`,
+      headline: `It takes 20% of the votes to win 1 of the ${result.seats} seats. That’s ${quotaText} votes.`,
       steps: fullSeats,
       stepDelay: (i) => (i === 1 ? 500 : 850),
       note: (step) =>
         step >= fullSeats
-          ? `Every group of ${quotaText} votes wins one seat — that fills ${fullSeats} of the ${result.seats}.`
+          ? `Every group of ${quotaText} votes wins one seat — that fills ${fullSeats} of the ${result.seats}.${earnedSentence}`
           : null,
     },
   ]
@@ -527,8 +603,8 @@ function buildModel(theme, result, myVote) {
       note: (step) =>
         step >= remainderCount
           ? names.length === 1
-            ? `${nameList} had the most leftover votes, so it wins the last seat, shown with a +. ★ marks the seats already won outright.`
-            : `${nameList} had the most leftover votes, so they win the last seats, shown with a +. ★ marks the seats already won outright.`
+            ? `${nameList} had the most leftover votes, so it wins the last seat, shown with a +.`
+            : `${nameList} had the most leftover votes, so they win the last seats, shown with a +.`
           : null,
     })
   }
@@ -552,6 +628,7 @@ function buildModel(theme, result, myVote) {
     rows,
     dots,
     myDot,
+    dotR,
     stageHeight,
     fullGroupOrder,
     leftoverOrder,
