@@ -212,10 +212,11 @@ function DotStage({ model, phase, step, reduced }) {
                   fill="none"
                   stroke={row.color}
                   strokeWidth="2"
-                  // A leftover seat is drawn dashed and marked +, an earned one
-                  // solid and marked ★. Without that, the leftover screen looks
-                  // identical to the one before it and reads as though these
-                  // parties had also reached a full group.
+                  // A leftover seat is drawn dashed, an earned one solid — the
+                  // ring is what distinguishes them now that both carry a star.
+                  // Without some difference the leftover screen looks identical
+                  // to the one before it and reads as though these parties had
+                  // also reached a full group.
                   strokeDasharray={row.kind === 'full' ? undefined : '5 3'}
                 />
               )}
@@ -238,7 +239,7 @@ function DotStage({ model, phase, step, reduced }) {
                     fontWeight="700"
                     fill="#fff"
                   >
-                    {row.kind === 'full' ? '★' : '+'}
+                    ★
                   </text>
                 </g>
               )}
@@ -574,13 +575,14 @@ function buildModel(theme, result, myVote) {
     {
       stage: 'dots',
       phase: 'seats',
-      headline: `It takes 20% of the votes to win 1 of the ${result.seats} seats. That’s ${quotaText} votes.`,
+      // All of it above the dots. Split across a headline and a caption, the
+      // reader's eye had to cross the drawing mid-sentence and the second half
+      // arrived only after the rings finished, so the two halves never read as
+      // one thought.
+      headline: `It takes 20% of the votes to win 1 of the ${result.seats} seats. That’s ${quotaText} votes. Every group of ${quotaText} votes wins one seat — that fills ${fullSeats} of the ${result.seats}.${earnedSentence}`,
       steps: fullSeats,
       stepDelay: (i) => (i === 1 ? 500 : 850),
-      note: (step) =>
-        step >= fullSeats
-          ? `Every group of ${quotaText} votes wins one seat — that fills ${fullSeats} of the ${result.seats}.${earnedSentence}`
-          : null,
+      note: () => null,
     },
   ]
 
@@ -590,22 +592,17 @@ function buildModel(theme, result, myVote) {
       names.length === 1
         ? names[0]
         : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`
+    const leftoverSentence =
+      names.length === 1
+        ? ` ${nameList} had the most leftover votes, so it wins the last seat.`
+        : ` ${nameList} had the most leftover votes, so they win the last seats.`
     beats.push({
       stage: 'dots',
       phase: 'leftover',
-      headline: `${remainderCount === 1 ? 'One seat is' : `${remainderCount} seats are`} still open, and no party has another full group of ${quotaText}.`,
+      headline: `${remainderCount === 1 ? 'One seat is' : `${remainderCount} seats are`} still open, and no party has another full group of ${quotaText}.${leftoverSentence}`,
       steps: remainderCount,
       stepDelay: (i) => (i === 1 ? 600 : 950),
-      // "Came closest to another full group" described the arithmetic accurately
-      // and taught nobody anything: it asks the reader to hold a group they never
-      // saw, that nobody completed. Leftover votes are the thing actually on
-      // screen, so the sentence names those instead.
-      note: (step) =>
-        step >= remainderCount
-          ? names.length === 1
-            ? `${nameList} had the most leftover votes, so it wins the last seat, shown with a +.`
-            : `${nameList} had the most leftover votes, so they win the last seats, shown with a +.`
-          : null,
+      note: () => null,
     })
   }
 

@@ -1,22 +1,26 @@
 <!doctype html><meta charset="utf-8">
-<title>Results flow — winners first, three variations</title>
+<title>Results flow — option B, chosen</title>
 <style>
   body{font:15px/1.5 ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;background:#f7f7f5;color:#14161a;margin:0 auto;padding:30px 26px 70px;max-width:1250px}
   h1{font-size:26px;margin:0 0 4px} h2{font-size:20px;margin:40px 0 2px}
   .sub{color:#5a6069;margin:0 0 10px}
   .diag{background:#fff;border:1px solid #d9dade;border-radius:12px;padding:14px 18px;margin:16px 0}
   .diag li{margin:4px 0}
+  .chosen{border-left:4px solid #2f6f5e}
+  .ask{background:#fffdf5;border:1px solid #e0d5a8;border-left:4px solid #b58900;border-radius:10px;padding:15px 19px;margin:18px 0}
   .strip{display:flex;flex-wrap:wrap;gap:14px;padding:10px 2px 4px;align-items:flex-start}
   .panel{width:262px;background:#fff;border:1px solid #d9dade;border-radius:14px;padding:12px;box-sizing:border-box;position:relative;flex-shrink:0}
   .knum{position:absolute;top:8px;right:11px;font-size:11px;color:#c2c6cc}
-  .ft{font-weight:600;font-size:12.5px;margin-bottom:6px;padding-right:20px;line-height:1.35;min-height:34px}
-  .cap{font-size:11.5px;color:#5a6069;margin-top:8px;line-height:1.45}
-  .note{font-size:11.5px;color:#5a6069;margin-top:7px;line-height:1.45;min-height:30px}
+  .ft{font-weight:600;font-size:12.5px;margin-bottom:7px;padding-right:22px;line-height:1.4}
+  .note{font-size:11.5px;color:#5a6069;margin-top:7px;line-height:1.45}
   .meta{font-size:11px;color:#98a0a8;margin-top:8px;border-top:1px solid #eceef0;padding-top:6px;line-height:1.4}
   .new{border-color:#2f6f5e;box-shadow:0 0 0 2px rgba(47,111,94,.13)}
   .cut{border-color:#b0121a;box-shadow:0 0 0 2px rgba(176,18,26,.11)}
+  .prop{border-color:#b58900;box-shadow:0 0 0 2px rgba(181,137,0,.13)}
+  .gone{opacity:.42;border-style:dashed}
   .tag{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;border-radius:4px;padding:1.5px 6px;margin-bottom:7px}
-  .tag.n{background:#2f6f5e;color:#fff} .tag.c{background:#b0121a;color:#fff} .tag.s{background:#eceef0;color:#5a6069}
+  .tag.n{background:#2f6f5e;color:#fff} .tag.c{background:#b0121a;color:#fff}
+  .tag.s{background:#eceef0;color:#5a6069} .tag.p{background:#b58900;color:#fff}
   svg{display:block;width:100%;height:auto}
   .card{border:1px solid #d9dade;border-radius:11px;overflow:hidden}
   .chead{color:#fff;font-size:11.5px;font-weight:600;padding:6px 9px;display:flex;justify-content:space-between}
@@ -35,56 +39,130 @@
   table{border-collapse:collapse;background:#fff;border:1px solid #d9dade;margin-top:16px;font-size:13.5px;width:100%}
   th,td{border:1px solid #d9dade;padding:9px 12px;text-align:left;vertical-align:top}
   th{background:#eef0f2;font-size:12.5px}
-  .rec{background:#fff;border:1px solid #d9dade;border-left:4px solid #2f4858;border-radius:10px;padding:15px 19px;margin-top:26px}
   .flowline{font-size:12.5px;color:#5a6069;margin:6px 0 0}
   .flowline b{color:#14161a}
 </style>
 
-<h1>Winners first — three ways to order the results</h1>
-<p class="sub">Storyboards, not final art, but the Act&nbsp;1 frames are drawn with the app's real geometry: <b>one dot = 10 votes</b>, groups of 20 dots, same row layout and badges as the shipped component. Running example: <b>Detroit Sports Legends, 1,000 votes, 5 seats</b>, so a seat takes 200 votes (20%) and the grid holds 100 dots. Tigers 340 · Lions 260 · Red Wings 210 · Pistons 190. Three seats are won outright and <b>two go to the biggest leftovers</b>. You voted for <b>Amon-Ra St.&nbsp;Brown</b> (Lions party) — the pulsing dot.</p>
+<h1>Option B — the chosen flow</h1>
+<p class="sub">Act&nbsp;1 frames are drawn with the app's real geometry: <b>one dot = 10 votes</b>, groups of 20 dots, same rows, rings and badges as the shipped component. Running example: <b>Detroit Sports Legends, 1,000 votes, 5 seats</b>, so a seat takes 200 votes (20%) and the grid holds 100 dots. Tigers 340 · Lions 260 · Red Wings 210 · Pistons 190. Three seats are won outright and <b>two go to the biggest leftovers</b>. You voted for <b>Amon-Ra St.&nbsp;Brown</b> (Lions party).</p>
 
-<div class="diag"><b>The three orderings</b>
+<div class="diag chosen"><b>Decisions folded in since the last version</b>
 <ul>
-<li><b>A — shipped today.</b> Reasoning first, winners at the end as the conclusion.</li>
-<li><b>B — winners first.</b> Open with the five winners, then the identical explanation.</li>
-<li><b>C — winners first, Act 2 collapsed.</b> As B, but "who fills the seat" becomes two sentences and the personal payoff merges into the same frame.</li>
+<li><b>B is the flow.</b> A is kept below only as a record of what is currently built; C is rejected.</li>
+<li><b>The old B2 is gone</b> — the opening grid of loose dots. The dots now first appear already sorted into parties.</li>
+<li><b>Every won seat gets a ★</b>, earned or leftover. The dashed ring is what still marks a leftover group; "+" is gone from both the badges and the text.</li>
+<li><b>Each Act 1 frame has one text block, above the dots.</b> No caption underneath — the reader's eye no longer crosses the drawing mid-sentence.</li>
+<li><b>The opening winners frame shows vote counts.</b></li>
 </ul>
-The decision is C. Act 2 is the only place the app shows <i>voters inside a party choosing which of their own candidates sits</i> — the thing that makes this an <b>open</b> list rather than a party-ranked one.</div>
+<b>Renumbering:</b> dropping the old B2 shifts everything up by one. The frames you called <b>B6</b> (who fills the seat) and <b>B7</b> (your vote) are now <b>B5</b> and <b>B6</b>. Panels below carry both the number and a name so this doesn't bite again.</div>
 
-<h2>A · Current flow — explanation first, winners as the payoff</h2>
-<p class="flowline"><b>Order:</b> count → gather → seats → leftover → inside your party → winners → your vote → winner-take-all</p>
+<h2>B · Winners first — 7 frames</h2>
+<p class="flowline"><b>Order:</b> winners → votes by party → seats → leftover → inside your party → your vote → winner-take-all</p>
 <div class="strip">
-  <div class="panel"><div class="knum">A1</div><span class="tag s">Act 1</span>
-    <div class="ft">1,000 votes were cast.</div>
-    <div data-dots="count"></div>
-    <div class="note">Every dot is about 10 votes, and the colored dot includes yours.</div></div>
+  <div class="panel new"><div class="knum">B1</div><span class="tag n">Opening · winners</span>
+    <div class="ft">Here's who won.</div>
+    <div data-winners="1"></div>
+    <div class="note">Vote counts included, as asked. Four colors visibly sharing five seats — the proportional result in one glance, before any explanation. Then: <b>"Here's how they were chosen."</b></div></div>
 
-  <div class="panel"><div class="knum">A2</div><span class="tag s">Act 1</span>
-    <div class="ft">Every vote joins the party it was cast for.</div>
+  <div class="panel gone"><div class="knum">old B2</div><span class="tag c">Cut</span>
+    <div class="ft" style="text-decoration:line-through">1,000 votes were cast.</div>
+    <div style="font-size:11.5px;color:#5a6069;line-height:1.6;margin-top:10px">
+      The grid of 100 loose grey dots is <b>removed</b>.<br><br>
+      Its only job was to establish the scale before the dots sorted themselves, and the next frame's headline now states the total outright. One less tap for a frame that showed no result.
+    </div></div>
+
+  <div class="panel"><div class="knum">B2</div><span class="tag s">Votes by party</span>
+    <div class="ft">1,000 votes were cast. Here are the votes by party.</div>
     <div data-dots="gather"></div>
-    <div class="note">The dots fly out of the grid into their party's rows.</div></div>
+    <div class="meta">Now the first frame with dots in it, so they arrive already grouped rather than flying in from a grid.</div></div>
 
-  <div class="panel"><div class="knum">A3</div><span class="tag s">Act 1</span>
-    <div class="ft">It takes 20% of the votes to win 1 of the 5 seats. That's 200 votes.</div>
+  <div class="panel"><div class="knum">B3</div><span class="tag s">Full groups</span>
+    <div class="ft">It takes 20% of the votes to win 1 of the 5 seats. That's 200 votes. Every group of 200 votes wins one seat — that fills 3 of the 5. The Lions, Tigers, and Red Wings Parties each win one seat, shown with a ★.</div>
     <div data-dots="seats"></div>
-    <div class="note">Every group of 200 votes wins one seat — that fills 3 of the 5. The Lions, Tigers, and Red Wings Parties each win one seat, shown with a ★.</div>
     <div class="meta">Groups are ringed one at a time, not all at once.</div></div>
 
-  <div class="panel"><div class="knum">A4</div><span class="tag s">Act 1</span>
-    <div class="ft">2 seats are still open, and no party has another full group of 200.</div>
+  <div class="panel"><div class="knum">B4</div><span class="tag s">Leftover seats</span>
+    <div class="ft">2 seats are still open, and no party has another full group of 200. Pistons party and Tigers party had the most leftover votes, so they win the last seats.</div>
     <div data-dots="leftover"></div>
-    <div class="note">Pistons party and Tigers party had the most leftover votes, so they win the last seats, shown with a +.</div></div>
+    <div class="meta">Leftover groups get a ★ like any other seat; the dashed ring is what marks them as leftover.</div></div>
 
-  <div class="panel"><div class="knum">A5</div><span class="tag s">Act 2</span>
+  <div class="panel"><div class="knum">B5</div><span class="tag s">was B6 · Act 2</span>
     <div class="ft">So who fills the Lions party's seat?</div>
     <div data-card="lions"></div>
     <div class="note">The Lions party wins 1 seat. The person with the most votes wins.</div>
-    <div class="meta">Names appear in <b>ballot order</b> (alphabetical), bars grow, then the list re-sorts by votes.</div></div>
+    <div class="meta">Names in <b>ballot order</b> (alphabetical), bars grow, then the list re-sorts by votes. Amon-Ra sits first and loses to Barry, second — the whole open-list lesson in one frame.</div></div>
+
+  <div class="panel"><div class="knum">B6</div><span class="tag s">was B7 · your vote</span>
+    <div class="ft">Your vote</div>
+    <div class="pay" style="border-color:#1a6ea8"><b>Amon-Ra St. Brown</b> didn't win a seat, but the Lions party won 1 — your vote still elected someone from your party.</div>
+    <div class="stat"><b>100% of voters</b> helped elect someone from their party.</div></div>
+
+  <div class="panel"><div class="knum">B7</div><span class="tag s">Winner-take-all</span>
+    <div class="ft">What if this was winner-take-all, like most US elections?</div>
+    <div class="stars">
+      <span class="seat" style="background:#c2540f">★</span><span class="seat" style="background:#c2540f">★</span><span class="seat" style="background:#c2540f">★</span><span class="seat" style="background:#c2540f">★</span><span class="seat" style="background:#c2540f">★</span>
+      <b style="color:#c2540f;font-size:11.5px">🐅 Tigers party</b>
+    </div>
+    <div style="font-size:11.5px;line-height:1.5">This district elected 5 people. Under traditional (winner take all) rules, there would be 5 nearby districts and the <b>🐅 Tigers party</b> would have won all of them even though they only won <b>34%</b> of the vote. Voters supporting the other parties, who made up <b>66%</b> of voters, would elect no representative from these districts.</div>
+    <div class="note">Voters represented: 34% under winner-take-all, 100% the way you just voted.</div></div>
+</div>
+
+<div class="ask"><b>Needs your call — the voter whose party won nothing</b>
+<p style="margin:8px 0 0">Right now B5 always shows <i>your</i> party. If your party won no seats there is nothing to show inside it, so B5 switches to the party that won the most seats. That leaves two questions: why the reader is suddenly looking at a party they didn't vote for, and what B6 says when the honest answer is "your vote elected nobody."</p>
+<p style="margin:8px 0 0">Two versions below. <b>Both are drafts — nothing is built yet.</b> They differ only in whether B6 makes the argument or just states the fact.</p>
+<p style="margin:8px 0 0"><b>Which party gets shown:</b> most seats, and if two are tied on seats, the one with more votes.</p>
+</div>
+
+<div class="strip">
+  <div class="panel prop"><div class="knum">B5′</div><span class="tag p">Draft · plain</span>
+    <div class="ft">The Birds party didn't win a seat, so let's look at the party that won the most. Who fills the Cats party's 2 seats?</div>
+    <div data-card="cats"></div>
+    <div class="note">The Cats party wins 2 seats. The 2 people with the most votes win.</div>
+    <div class="meta">Names the reader's own result first, so the switch doesn't feel arbitrary, then carries on with the open-list lesson using a party that actually has seats to fill.</div></div>
+
+  <div class="panel prop"><div class="knum">B6′ · A</div><span class="tag p">Draft A · plain</span>
+    <div class="ft">Your vote</div>
+    <div class="pay" style="border-color:#0e7490">You voted for <b>Tweety</b>. The Birds party won <b>16%</b> of the vote — just short of the 20% it takes to win one of 5 seats — so it elected no one this time.</div>
+    <div class="stat"><b>84% of voters</b> helped elect someone from their party.</div>
+    <div class="meta">States what happened and how close it was. No consolation, no argument. The 84% figure does the work by implication: you are in the 16%.</div></div>
+
+  <div class="panel prop"><div class="knum">B6′ · B</div><span class="tag p">Draft B · adds the lesson</span>
+    <div class="ft">Your vote</div>
+    <div class="pay" style="border-color:#0e7490">You voted for <b>Tweety</b>. The Birds party won <b>16%</b> of the vote — just short of the 20% it takes to win one of 5 seats — so it elected no one this time.<br><br>In a district electing more than 5, a party this size would usually win a seat.</div>
+    <div class="stat"><b>84% of voters</b> helped elect someone from their party.</div>
+    <div class="meta">Same first paragraph, plus one sentence explaining that the shutout is a function of district size. True, and the most useful thing a shut-out voter could learn — but it is the app arguing rather than demonstrating, which every other frame avoids.</div></div>
+</div>
+
+<h2>A · What is currently built, for reference</h2>
+<p class="flowline"><b>Order:</b> count → gather → seats → leftover → inside your party → winners → your vote → winner-take-all &nbsp;·&nbsp; text and badges already updated; the ordering is what B changes</p>
+<div class="strip">
+  <div class="panel"><div class="knum">A1</div>
+    <div class="ft">1,000 votes were cast.</div>
+    <div data-dots="count"></div>
+    <div class="note">Every dot is about 10 votes, and the colored dot includes yours.</div>
+    <div class="meta">This is the frame B drops.</div></div>
+
+  <div class="panel"><div class="knum">A2</div>
+    <div class="ft">Every vote joins the party it was cast for.</div>
+    <div data-dots="gather"></div></div>
+
+  <div class="panel"><div class="knum">A3</div>
+    <div class="ft">It takes 20% of the votes to win 1 of the 5 seats. That's 200 votes. Every group of 200 votes wins one seat — that fills 3 of the 5. The Lions, Tigers, and Red Wings Parties each win one seat, shown with a ★.</div>
+    <div data-dots="seats"></div></div>
+
+  <div class="panel"><div class="knum">A4</div>
+    <div class="ft">2 seats are still open, and no party has another full group of 200. Pistons party and Tigers party had the most leftover votes, so they win the last seats.</div>
+    <div data-dots="leftover"></div></div>
+
+  <div class="panel"><div class="knum">A5</div>
+    <div class="ft">So who fills the Lions party's seat?</div>
+    <div data-card="lions"></div>
+    <div class="note">The Lions party wins 1 seat. The person with the most votes wins.</div></div>
 
   <div class="panel"><div class="knum">A6</div>
     <div class="ft">All 5 winners</div>
     <div data-winners="1"></div>
-    <div class="meta">Arrives last, as the conclusion of the argument.</div></div>
+    <div class="meta">In B this moves to the front.</div></div>
 
   <div class="panel"><div class="knum">A7</div>
     <div class="ft">Your vote</div>
@@ -97,126 +175,22 @@ The decision is C. Act 2 is the only place the app shows <i>voters inside a part
       <span class="seat" style="background:#c2540f">★</span><span class="seat" style="background:#c2540f">★</span><span class="seat" style="background:#c2540f">★</span><span class="seat" style="background:#c2540f">★</span><span class="seat" style="background:#c2540f">★</span>
       <b style="color:#c2540f;font-size:11.5px">🐅 Tigers party</b>
     </div>
-    <div style="font-size:11.5px;line-height:1.5">This district elected 5 people. Under traditional (winner take all) rules, there would be 5 nearby districts and the <b>🐅 Tigers party</b> would have won all of them even though they only won <b>34%</b> of the vote. Voters supporting the other parties, who made up <b>66%</b> of voters, would elect no representative from these districts.</div>
-    <div class="note">Voters represented: 34% under winner-take-all, 100% the way you just voted.</div></div>
+    <div style="font-size:11.5px;line-height:1.5">…the <b>🐅 Tigers party</b> would have won all of them on <b>34%</b> of the vote. The other <b>66%</b> would elect no representative.</div></div>
 </div>
 
-<h2>B · Winners first — identical explanation, resequenced</h2>
-<p class="flowline"><b>Order:</b> <b>winners</b> → count → gather → seats → leftover → inside your party → your vote → winner-take-all</p>
-<div class="strip">
-  <div class="panel new"><div class="knum">B1</div><span class="tag n">New opening</span>
-    <div class="ft">Here's who won.</div>
-    <div data-winners="0"></div>
-    <div class="note">No vote counts yet — just the outcome, and four colors visibly sharing five seats. Then: <b>"Here's how they were chosen."</b></div></div>
-
-  <div class="panel"><div class="knum">B2</div><span class="tag s">= A1</span>
-    <div class="ft">1,000 votes were cast.</div>
-    <div data-dots="count"></div>
-    <div class="note">Unchanged.</div></div>
-
-  <div class="panel"><div class="knum">B3</div><span class="tag s">= A2</span>
-    <div class="ft">Every vote joins the party it was cast for.</div>
-    <div data-dots="gather"></div>
-    <div class="note">Unchanged.</div></div>
-
-  <div class="panel"><div class="knum">B4</div><span class="tag s">= A3</span>
-    <div class="ft">It takes 20% of the votes to win 1 of the 5 seats. That's 200 votes.</div>
-    <div data-dots="seats"></div>
-    <div class="note">Now reads as <i>confirmation</i> of B1 rather than suspense — three of the five you already saw.</div></div>
-
-  <div class="panel"><div class="knum">B5</div><span class="tag s">= A4</span>
-    <div class="ft">2 seats are still open, and no party has another full group of 200.</div>
-    <div data-dots="leftover"></div>
-    <div class="note">Pistons party and Tigers party had the most leftover votes, so they win the last seats, shown with a +.</div></div>
-
-  <div class="panel"><div class="knum">B6</div><span class="tag s">= A5</span>
-    <div class="ft">So who fills the Lions party's seat?</div>
-    <div data-card="lions"></div>
-    <div class="note">Kept in full. The only frame that answers "who decided it was <i>Barry</i>?"</div></div>
-
-  <div class="panel"><div class="knum">B7</div><span class="tag s">= A7</span>
-    <div class="ft">Your vote</div>
-    <div class="pay" style="border-color:#1a6ea8"><b>Amon-Ra St. Brown</b> didn't win a seat, but the Lions party won 1 — your vote still elected someone from your party.</div>
-    <div class="stat"><b>100% of voters</b> helped elect someone from their party.</div></div>
-
-  <div class="panel"><div class="knum">B8</div><span class="tag s">= A8</span>
-    <div class="ft">What if this was winner-take-all, like most US elections?</div>
-    <div class="stars">
-      <span class="seat" style="background:#c2540f">★</span><span class="seat" style="background:#c2540f">★</span><span class="seat" style="background:#c2540f">★</span><span class="seat" style="background:#c2540f">★</span><span class="seat" style="background:#c2540f">★</span>
-      <b style="color:#c2540f;font-size:11.5px">🐅 Tigers party</b>
-    </div>
-    <div style="font-size:11.5px;line-height:1.5">…the <b>🐅 Tigers party</b> would have won all of them even though they only won <b>34%</b> of the vote. Voters supporting the other parties, who made up <b>66%</b> of voters, would elect no representative from these districts.</div>
-    <div class="note">Unchanged, and still last: the contrast only bites once the fair result is understood.</div></div>
-</div>
-
-<h2>C · Winners first, Act 2 replaced by two sentences</h2>
-<p class="flowline"><b>Order:</b> winners → count → gather → seats → leftover → <b>statement + 100%</b> → winner-take-all &nbsp;·&nbsp; seven frames instead of eight</p>
-<div class="strip">
-  <div class="panel new"><div class="knum">C1</div><span class="tag n">= B1</span>
-    <div class="ft">Here's who won.</div>
-    <div data-winners="0"></div>
-    <div class="note">Identical to B1.</div></div>
-
-  <div class="panel"><div class="knum">C2</div><span class="tag s">= B2</span>
-    <div class="ft">1,000 votes were cast.</div>
-    <div data-dots="count"></div>
-    <div class="note">Every dot is about 10 votes, and the colored dot includes yours.</div></div>
-
-  <div class="panel"><div class="knum">C3</div><span class="tag s">= B3</span>
-    <div class="ft">Every vote joins the party it was cast for.</div>
-    <div data-dots="gather"></div>
-    <div class="note">Unchanged.</div></div>
-
-  <div class="panel"><div class="knum">C4</div><span class="tag s">= B4</span>
-    <div class="ft">It takes 20% of the votes to win 1 of the 5 seats. That's 200 votes.</div>
-    <div data-dots="seats"></div>
-    <div class="note">Every group of 200 votes wins one seat — that fills 3 of the 5. The Lions, Tigers, and Red Wings Parties each win one seat, shown with a ★.</div></div>
-
-  <div class="panel"><div class="knum">C5</div><span class="tag s">= B5</span>
-    <div class="ft">2 seats are still open, and no party has another full group of 200.</div>
-    <div data-dots="leftover"></div>
-    <div class="note">Pistons party and Tigers party had the most leftover votes, so they win the last seats, shown with a +.</div></div>
-
-  <div class="panel cut"><div class="knum">C6</div><span class="tag c">Replaces Act 2</span>
-    <div class="ft">So who fills the Lions party's seat?</div>
-    <div class="pay" style="border-color:#1a6ea8;margin-bottom:8px">
-      The <b>Lions</b> get one seat, <b>Barry Sanders</b> got the most votes and wins that seat.
-    </div>
-    <div class="pay" style="border-color:#1a6ea8">
-      <b>Amon-Ra St. Brown</b> didn't win a seat — your vote still elected someone from your party.
-    </div>
-    <div class="stat"><b>100% of voters</b> helped elect someone from their party.</div>
-    <div class="meta">No card, no ballot order, no bars, no re-sort. The old "your vote" frame is gone — it said the same thing, so it merges in here.</div></div>
-
-  <div class="panel"><div class="knum">C7</div><span class="tag s">= A8 / B8</span>
-    <div class="ft">What if this was winner-take-all, like most US elections?</div>
-    <div class="stars">
-      <span class="seat" style="background:#c2540f">★</span><span class="seat" style="background:#c2540f">★</span><span class="seat" style="background:#c2540f">★</span><span class="seat" style="background:#c2540f">★</span><span class="seat" style="background:#c2540f">★</span>
-      <b style="color:#c2540f;font-size:11.5px">🐅 Tigers party</b>
-    </div>
-    <div style="font-size:11.5px;line-height:1.5">…the <b>🐅 Tigers party</b> would have won all of them even though they only won <b>34%</b> of the vote. Voters supporting the other parties, who made up <b>66%</b> of voters, would elect no representative from these districts.</div>
-    <div class="note">Unchanged.</div></div>
-</div>
-
-<h2>What each version teaches</h2>
+<h2>A → B, frame by frame</h2>
 <table>
-<tr><th style="width:29%">Idea</th><th style="width:23.6%">A · current</th><th style="width:23.7%">B · winners first</th><th style="width:23.7%">C · winners first, no Act 2</th></tr>
-<tr><td>Seats split in proportion to votes</td><td>Shown</td><td>Shown</td><td>Shown</td></tr>
-<tr><td>A seat costs 20% of the vote — 200 votes, 20 dots</td><td>Shown</td><td>Shown</td><td>Shown</td></tr>
-<tr><td>Leftover votes still win seats</td><td>Shown</td><td>Shown</td><td>Shown</td></tr>
-<tr><td><b>Voters, not the party, pick which candidate sits</b></td><td>Shown — bars, ballot order, re-sort</td><td>Shown — identical</td><td><b>Asserted in one sentence.</b> "Got the most votes" is stated, never demonstrated</td></tr>
-<tr><td><b>Ballot order decides nothing</b></td><td>Shown — Amon-Ra sits first alphabetically and loses to Barry, second</td><td>Shown — identical</td><td><b>Lost.</b> Ballot order never appears, so there is nothing to disprove</td></tr>
-<tr><td>Your losing vote still elected someone</td><td>Shown</td><td>Shown</td><td>Shown, merged into C6</td></tr>
-<tr><td>Winner-take-all wastes most votes</td><td>Shown</td><td>Shown</td><td>Shown</td></tr>
-<tr><td>Frames</td><td>8</td><td>8</td><td>7</td></tr>
+<tr><th style="width:34%">A · built today</th><th style="width:33%">B · chosen</th><th style="width:33%">Change</th></tr>
+<tr><td>A1 — 1,000 votes were cast (loose grid)</td><td>—</td><td><b>Cut.</b> One tap, no result shown</td></tr>
+<tr><td>A2 — Every vote joins the party it was cast for</td><td>B2 — 1,000 votes were cast. Here are the votes by party.</td><td>New headline absorbs the total from the cut frame</td></tr>
+<tr><td>A3 — full groups</td><td>B3</td><td>Unchanged</td></tr>
+<tr><td>A4 — leftover seats</td><td>B4</td><td>Unchanged</td></tr>
+<tr><td>A5 — inside your party</td><td>B5</td><td>Unchanged, except the zero-seat case above</td></tr>
+<tr><td>A6 — all 5 winners</td><td><b>B1</b>, with vote counts</td><td><b>Moves to the front</b></td></tr>
+<tr><td>A7 — your vote + 100%</td><td>B6</td><td>Unchanged, except the zero-seat case above</td></tr>
+<tr><td>A8 — winner-take-all</td><td>B7</td><td>Unchanged</td></tr>
+<tr><td>8 frames</td><td>7 frames</td><td>One fewer tap</td></tr>
 </table>
-
-<div class="rec"><b>Recommendation: B.</b>
-<p style="margin:8px 0 0">Opening with the winners is a clear improvement over A and costs nothing. People who just voted want to know what happened; four beats of arithmetic first spends attention before it has been earned. Leading with the outcome also does work the current order can't — five seats in four colors is the proportional result <i>visible in one glance</i>, before a single number appears. "Here's how they were chosen" then reads as an offer rather than a lecture, and every later beat lands as confirmation of something already seen.</p>
-<p style="margin:8px 0 0">C is the one I'd push back on. The frame it removes is the only place the app shows an <b>open</b> list working — that voters inside a party, not the party, decide which of their candidates gets the seat. Everything else in the flow would be equally true of a closed-list system where the party ranks its own candidates. The alphabetical ballot order was chosen precisely so this frame demonstrates itself: Amon-Ra St. Brown sits first on the ballot and loses to Barry Sanders, second. C keeps the claim "got the most votes" and deletes the evidence for it.</p>
-<p style="margin:8px 0 0">If the goal behind C is length, the cheaper cut is <i>inside</i> Act 2 rather than of it: drop the separate re-sort step and let the bars grow directly into sorted order. One tap instead of two, about 5 of the 12 seconds, and the ballot-order lesson survives intact.</p>
-<p style="margin:8px 0 0"><b>Worth testing rather than deciding:</b> whether "here's who won" up front makes people stop reading. It's the plausible failure mode of B and C both — curiosity satisfied, attention gone.</p>
-</div>
 
 <script>
 // Geometry copied from src/components/SeatStory.jsx so the frames match the build.
@@ -249,8 +223,6 @@ rows.forEach((r, i) => {
 });
 const H = y + 6;
 
-// Dots are laid out in row order, then translated out to the grid for the
-// opening beat — same single set of circles the component moves.
 const dots = [];
 let gi = 0;
 for (const r of rows) for (let i = 0; i < r.dots; i++) {
@@ -278,7 +250,8 @@ function svgFor(mode) {
       if (ringed) {
         s += `<rect x="${G.x}" y="${r.y-9}" width="${G.w}" height="18" rx="9" fill="none" stroke="${r.p.color}" stroke-width="2"${r.kind==='full'?'':' stroke-dasharray="5 3"'}/>`;
         s += `<rect x="${STAR.x}" y="${r.y-9}" width="${STAR.size}" height="${STAR.size}" rx="5" fill="${r.p.color}"/>`;
-        s += `<text x="${STAR.x+STAR.size/2}" y="${r.y+5}" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">${r.kind==='full'?'★':'+'}</text>`;
+        // Every won seat carries a star now; the dashed ring marks a leftover.
+        s += `<text x="${STAR.x+STAR.size/2}" y="${r.y+5}" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">★</text>`;
       }
       if (mode === 'leftover' && r.kind === 'partial') {
         s += `<text x="${W-4}" y="${r.y+4}" text-anchor="end" font-size="9" fill="#5a6069">${r.p.leftVotes} left over</text>`;
@@ -295,20 +268,22 @@ function svgFor(mode) {
   s += `<circle cx="${mx.toFixed(2)}" cy="${my.toFixed(2)}" r="${R+2.5}" fill="none" stroke="${me.row.p.color}" stroke-width="1.6" opacity=".85"/>`;
   return s + '</svg>';
 }
-
 document.querySelectorAll('[data-dots]').forEach(el => { el.innerHTML = svgFor(el.dataset.dots); });
 
 // Act 2 card — bars, which is what the shipped component uses here.
-const LIONS = [
-  {n:'Amon-Ra St. Brown', v:48},
-  {n:'Barry Sanders',     v:96, win:true},
-  {n:'Bobby Layne',       v:32},
-  {n:'Calvin Johnson',    v:62},
-  {n:'Night Train Lane',  v:22},
-];
+const CARDS = {
+  lions: {label:'🦁 Lions party', seats:'1 seat', color:'#1a6ea8', top:96, rows:[
+    {n:'Amon-Ra St. Brown', v:48}, {n:'Barry Sanders', v:96, win:true},
+    {n:'Bobby Layne', v:32}, {n:'Calvin Johnson', v:62}, {n:'Night Train Lane', v:22}]},
+  // the zero-seat draft: reader voted Birds, so Act 2 shows the biggest winner
+  cats: {label:'🐈 Cats party', seats:'2 seats', color:'#c2410c', top:110, rows:[
+    {n:'Cheshire Cat', v:64}, {n:'Garfield', v:110, win:true},
+    {n:'Grumpy Cat', v:38}, {n:'Puss in Boots', v:81, win:true}, {n:'Tom', v:29}]},
+};
 document.querySelectorAll('[data-card]').forEach(el => {
-  el.innerHTML = `<div class="card"><div class="chead" style="background:#1a6ea8"><span>🦁 Lions party</span><span>1 seat</span></div>` +
-    LIONS.map(c => `<div class="crow${c.win?' winrow':''}"><span class="cname">${esc(c.n)}${c.win?' ★':''}</span><span class="ctrack"><span class="cfill" style="width:${Math.round(c.v/96*100)}%;background:#1a6ea8"></span></span><span class="cvotes">${c.v}</span></div>`).join('') +
+  const c = CARDS[el.dataset.card];
+  el.innerHTML = `<div class="card"><div class="chead" style="background:${c.color}"><span>${c.label}</span><span>${c.seats}</span></div>` +
+    c.rows.map(r => `<div class="crow${r.win?' winrow':''}"><span class="cname">${esc(r.n)}${r.win?' ★':''}</span><span class="ctrack"><span class="cfill" style="width:${Math.round(r.v/c.top*100)}%;background:${c.color}"></span></span><span class="cvotes">${r.v}</span></div>`).join('') +
     `</div>`;
 });
 
