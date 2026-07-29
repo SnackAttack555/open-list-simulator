@@ -2,17 +2,17 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
 import { allocate, describeMyVote } from '../lib/allocate.js'
 import { partyName } from '../data/index.js'
-import { SEATS } from '../config.js'
+import { QUOTA_PCT, SEATS } from '../config.js'
 import SeatStory from '../components/SeatStory.jsx'
 
 /**
  * The results screen: first the explanation, then the payoff.
  *
- * SeatStory carries the argument (votes -> seats -> which people). Everything
- * below it — what happened to your own vote, how many voters ended up
- * represented, and the winner-take-all comparison — only appears once that
- * story has been read through, so the conclusion never arrives before the
- * reasoning.
+ * SeatStory carries the argument: who won, then votes -> seats -> which people.
+ * The winners open the story rather than closing it, so they are not repeated
+ * here. What is left below — what happened to your own vote, how many voters
+ * ended up represented, and the winner-take-all comparison — appears only once
+ * the story has been read through.
  */
 export default function Results({ theme, myVote, results, error, onRestart }) {
   const reduced = useReducedMotion()
@@ -70,6 +70,13 @@ export default function Results({ theme, myVote, results, error, onRestart }) {
   // claims 101% of voters.
   const wtaPct = Math.round(result.wta.pctRepresented)
 
+  // For the shut-out case. "Just short" is only true when it nearly cleared the
+  // quota — a party on 4% is short, not just short, and claiming otherwise is the
+  // kind of small dishonesty a sceptical reader notices.
+  const myList = myVote ? result.lists.find((l) => l.id === myVote.listId) : null
+  const myPct = myList ? Math.round(myList.votePct) : 0
+  const justShort = Boolean(myList) && myList.votePct >= QUOTA_PCT - 5
+
   return (
     <div className="mx-auto w-full max-w-[520px] px-5 pt-6 pb-12">
       <h1 className="text-2xl font-semibold tracking-tight">{theme.name}</h1>
@@ -87,32 +94,11 @@ export default function Results({ theme, myVote, results, error, onRestart }) {
 
       {storyDone && (
         <motion.div {...fade} ref={afterRef} className="mt-8">
-          <h2 className="text-lg font-semibold">All {result.seats} winners</h2>
-          <ol className="mt-3 flex flex-col gap-2">
-            {result.winners.map((winner) => (
-              <li
-                key={`${winner.listId}/${winner.candidateId}`}
-                className="flex items-center gap-3 rounded-xl border border-[var(--line)] bg-[var(--card)] px-3 py-2.5"
-              >
-                <span
-                  aria-hidden="true"
-                  className="size-2.5 shrink-0 rounded-full"
-                  style={{ backgroundColor: winner.color }}
-                />
-                <span className="min-w-0 flex-1">
-                  <span className="block font-medium">{winner.name}</span>
-                  <span className="block text-xs text-[var(--ink-soft)]">
-                    {partyName(winner.listName)} · {winner.votes.toLocaleString()} votes
-                    {winner.tieBroken && ' · tied, drawn from a hat 🎩'}
-                  </span>
-                </span>
-              </li>
-            ))}
-          </ol>
-
+          {/* The winners are the story's opening beat now, so they are not
+              repeated here. What is left is what the result meant for you. */}
           {mine && (
             <div
-              className="mt-7 rounded-2xl border-2 px-4 py-4"
+              className="rounded-2xl border-2 px-4 py-4"
               style={{ borderColor: mine.color }}
             >
               {mine.candidateElected ? (
@@ -129,8 +115,9 @@ export default function Results({ theme, myVote, results, error, onRestart }) {
               ) : (
                 <p className="text-[17px]">
                   You voted for <strong>{mine.candidateName}</strong>. The{' '}
-                  {partyName(mine.listName)} finished short of a full group, so it won no seats
-                  this time.
+                  {partyName(mine.listName)} won <strong>{myPct}%</strong> of the vote —{' '}
+                  {justShort ? 'just short of' : 'short of'} the {QUOTA_PCT}% it takes to win
+                  one of {result.seats} seats — so it elected no one this time.
                 </p>
               )}
             </div>

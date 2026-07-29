@@ -8,15 +8,20 @@ import { ballotOrder, partyName } from '../data/index.js'
  * This is not decoration. It carries one argument, in the order a person
  * actually asks the questions:
  *
- *   1. How many votes were there?
- *   2. Where did they go?              -> every vote joins a party
+ *   1. Who won?                        -> five seats, visibly split across parties
+ *   2. Where did the votes go?         -> every vote sits with its party
  *   3. How do votes become seats?      -> each group worth 20% wins one
- *   4. What about the votes left over? -> the closest leftovers take what remains
+ *   4. What about the votes left over? -> the biggest leftovers take what remains
  *   5. Who fills my party's seats?     -> the most personal votes, full stop
+ *
+ * Opening on the answer rather than withholding it: somebody who just voted
+ * wants to know what happened, and the split across parties is the proportional
+ * result in one glance. Every later beat then reads as confirmation.
  *
  * Step 5 is the payload, and it only lands because the candidates are shown
  * first in printed (alphabetical) order: you cannot see that the printed order
- * was irrelevant unless you were shown the printed order.
+ * was irrelevant unless you were shown the printed order. It is skipped outright
+ * when the reader's own party won nothing — there is no seat to award inside it.
  *
  * Everything is drawn inside ONE svg. An earlier version positioned the dots as
  * HTML over an svg holding the outlines, which lined up at exactly one viewport
@@ -115,7 +120,9 @@ export default function SeatStory({ theme, result, myVote, onDone, onFinish }) {
           {current.headline}
         </p>
 
-        {current.stage === 'dots' ? (
+        {current.stage === 'winners' ? (
+          <WinnersStage winners={model.winners} myVote={myVote} reduced={reduced} />
+        ) : current.stage === 'dots' ? (
           <DotStage model={model} phase={current.phase} step={step} reduced={reduced} />
         ) : (
           <CandidateStage model={model} step={step} reduced={reduced} />
@@ -146,7 +153,7 @@ export default function SeatStory({ theme, result, myVote, onDone, onFinish }) {
           }
           className="min-h-12 flex-1 rounded-xl bg-[var(--accent)] font-semibold text-white"
         >
-          {isLast ? 'See all the winners ↓' : 'Next'}
+          {isLast ? 'What it means for your vote ↓' : 'Next'}
         </button>
       </div>
 
@@ -160,6 +167,59 @@ export default function SeatStory({ theme, result, myVote, onDone, onFinish }) {
         ))}
       </ol>
     </section>
+  )
+}
+
+/* ------------------------------------------------------------------ *
+ * The opening — who won
+ * ------------------------------------------------------------------ */
+
+/**
+ * The five winners, with the vote each one got.
+ *
+ * Deliberately the same shape as the rest of the story rather than a separate
+ * scoreboard: one row per seat, party colour on the left, so the split across
+ * parties is legible before any of it is explained. The reader's own candidate
+ * is marked, because finding yourself in the list is the first question anyone
+ * asks of it.
+ */
+function WinnersStage({ winners, myVote, reduced }) {
+  return (
+    <ol className="mt-3 flex flex-col gap-1.5">
+      {winners.map((winner, i) => {
+        const isMine =
+          myVote?.listId === winner.listId && myVote?.candidateId === winner.candidateId
+        return (
+          <motion.li
+            key={`${winner.listId}/${winner.candidateId}`}
+            initial={reduced ? false : { opacity: 0, x: -8 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: reduced ? 0 : i * 0.12, duration: reduced ? 0 : 0.35 }}
+            className="flex items-center gap-2.5 rounded-lg px-2 py-1.5"
+            style={isMine ? { backgroundColor: `${winner.color}14` } : undefined}
+          >
+            <span
+              aria-hidden="true"
+              className="size-2.5 shrink-0 rounded-full"
+              style={{ backgroundColor: winner.color }}
+            />
+            <span className="min-w-0 flex-1">
+              <span className="block text-[15px] font-medium">
+                {winner.name}
+                {isMine && (
+                  <span className="ml-1.5 text-[11px] font-semibold text-[var(--ink-soft)]">
+                    your vote
+                  </span>
+                )}
+              </span>
+              <span className="block text-xs text-[var(--ink-soft)]">
+                {partyName(winner.listName)} · {winner.votes.toLocaleString()} votes
+              </span>
+            </span>
+          </motion.li>
+        )
+      })}
+    </ol>
   )
 }
 
@@ -555,22 +615,29 @@ function buildModel(theme, result, myVote) {
         : `The ${partyName(focus)} wins ${focus.seats} seats. The ${focus.seats} ${nounPlural} with the most votes win.`
 
   const beats = [
+    // Winners first. Somebody who just voted wants to know what happened, and
+    // four colours sharing five seats *is* the proportional result — visible in
+    // one glance, before a single number. Everything after this reads as
+    // confirmation of something already seen rather than suspense.
+    {
+      stage: 'winners',
+      phase: 'winners',
+      headline: 'Here’s who won.',
+      steps: 0,
+      note: () => 'Now here’s how they were chosen.',
+    },
+    // The opening grid of loose dots is gone. Its only job was to fix the scale
+    // before the dots sorted themselves, which this headline does outright — and
+    // it was a whole tap that showed no result. The scale caption comes with it.
     {
       stage: 'dots',
-      phase: 'count',
-      headline: `${result.totalVotes.toLocaleString()} votes were cast.`,
+      phase: 'gather',
+      headline: `${result.totalVotes.toLocaleString()} votes were cast. Here are the votes by party.`,
       steps: 0,
       note: () =>
         `Every dot is about ${votesPerDot.toLocaleString()} ${votesPerDot === 1 ? 'vote' : 'votes'}${
           myDot ? ', and the colored dot includes yours' : ''
         }.`,
-    },
-    {
-      stage: 'dots',
-      phase: 'gather',
-      headline: 'Every vote joins the party it was cast for.',
-      steps: 0,
-      note: () => null,
     },
     {
       stage: 'dots',
@@ -606,8 +673,12 @@ function buildModel(theme, result, myVote) {
     })
   }
 
+  // Skipped when the reader's own party won nothing. There is no seat to award
+  // inside it, and showing some other party's contest at this point answers a
+  // question they didn't ask — the results screen states their shortfall
+  // instead.
   const act2Steps = printed.length + 3
-  beats.push({
+  if (focus.seats > 0) beats.push({
     stage: 'cands',
     phase: 'inside',
     headline:
@@ -626,6 +697,7 @@ function buildModel(theme, result, myVote) {
     dots,
     myDot,
     dotR,
+    winners: result.winners,
     stageHeight,
     fullGroupOrder,
     leftoverOrder,
