@@ -10,6 +10,7 @@ import {
   submitEase,
 } from './lib/api.js'
 import Start from './screens/Start.jsx'
+import Primer from './screens/Primer.jsx'
 import Ballot from './screens/Ballot.jsx'
 import EaseScale from './screens/EaseScale.jsx'
 import Results from './screens/Results.jsx'
@@ -54,7 +55,10 @@ export default function App() {
     }
 
     setSelection(null)
-    setScreen('ballot')
+    // The instruction screen first. Both of its lines are on the ballot too, but
+    // there they compete with twenty names and a carousel, and people were
+    // missing them.
+    setScreen('primer')
   }
 
   const goStart = () => {
@@ -132,6 +136,10 @@ export default function App() {
        once. Prose stays at phone width everywhere else no matter the monitor. */
     <div className="flex min-h-dvh w-full flex-col">
       {screen === 'start' && <Start region={region} themes={themes} onPick={openTheme} />}
+
+      {screen === 'primer' && theme && (
+        <Primer theme={theme} onDone={() => setScreen('ballot')} />
+      )}
 
       {screen === 'ballot' && theme && (
         <Ballot

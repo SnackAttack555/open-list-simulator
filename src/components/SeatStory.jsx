@@ -153,7 +153,7 @@ export default function SeatStory({ theme, result, myVote, onDone, onFinish }) {
           }
           className="min-h-12 flex-1 rounded-xl bg-[var(--accent)] font-semibold text-white"
         >
-          {isLast ? 'What it means for your vote ↓' : 'Next'}
+          {isLast ? 'What it means for your vote ↓' : (current.nextLabel ?? 'Next')}
         </button>
       </div>
 
@@ -625,6 +625,9 @@ function buildModel(theme, result, myVote) {
       headline: 'Here’s who won.',
       steps: 0,
       note: () => 'Now here’s how they were chosen.',
+      // The one beat whose forward button describes a destination rather than a
+      // sequence: from an answer to the reasoning behind it.
+      nextLabel: 'See how they won',
     },
     // The opening grid of loose dots is gone. Its only job was to fix the scale
     // before the dots sorted themselves, which this headline does outright — and

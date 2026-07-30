@@ -11,6 +11,15 @@ export const QUOTA_PCT = Math.round(100 / SEATS)
 
 export const QUOTA_SENTENCE = `${QUOTA_PCT}% of the vote wins 1 spot, ${QUOTA_PCT * 2}% wins 2, and so on.`
 
+/**
+ * How long the pre-ballot instruction screen stays up, in milliseconds.
+ *
+ * Long enough to read two short lines without feeling stalled. Both lines also
+ * appear on the ballot itself, so this screen is emphasis rather than the only
+ * place the information lives — and a tap skips it.
+ */
+export const PRIMER_MS = 2200
+
 /** 5-point ease scale, stored as 1..5. Order matters: index 0 is "easiest". */
 export const EASE_OPTIONS = [
   { value: 1, label: 'Very easy', emoji: '😃' },
