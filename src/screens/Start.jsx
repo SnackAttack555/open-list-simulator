@@ -40,9 +40,11 @@ export default function Start({ region, themes, onPick }) {
           <h1 className="text-3xl leading-tight font-semibold tracking-tight">
             Vote for your favorites
           </h1>
-          <p className="mt-2.5 text-[17px] leading-snug font-semibold">
-            First, pick a world.
-          </p>
+          {/* A real subhead tier, sized between the headline and the body rather
+              than sitting a notch above body text, where it read as a caption and
+              got skimmed past — which is the whole thing this line exists to
+              prevent. No terminal period, matching the headline above it. */}
+          <p className="mt-3 text-[21px] leading-snug font-semibold">First, pick a world</p>
           <p className="mt-1 text-[15px] text-[var(--ink-soft)]">
             Vote in an election for five seats.
           </p>
