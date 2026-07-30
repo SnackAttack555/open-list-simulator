@@ -44,7 +44,7 @@ export default function Start({ region, themes, onPick }) {
             First, pick a world.
           </p>
           <p className="mt-1 text-[15px] text-[var(--ink-soft)]">
-            Then you&apos;ll cast one vote in an election for five seats.
+            Vote in an election for five seats.
           </p>
         </div>
         {/* The label is tied to the region, not to the drawing — a state edition
