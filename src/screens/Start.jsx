@@ -22,21 +22,28 @@ export default function Start({ region, themes, onPick }) {
 
   return (
     <div className="mx-auto w-full max-w-[520px] px-5 pt-8 pb-10">
-      {/* The headline is an instruction, not a welcome. "Vote for your favorites"
-          over a list of worlds read as though the list *was* the ballot, and
-          people were picking Hogwarts and waiting for a result. Numbering the
-          step is what fixes it: "first" implies a second thing, so the list
-          becomes a doorway rather than the election.
+      {/* Three tiers, because the screen has to answer three questions in order:
+          what is this, what do I do now, and what happens after.
 
-          The region name moves over the outline it labels. On the left it was the
+          The headline alone wasn't enough — "Vote for your favorites" above a list
+          of worlds read as though the list *was* the ballot, and people picked
+          Hogwarts and waited for a result. But replacing it with the instruction
+          left nothing identifying the site at all. So the headline says what this
+          is and the subhead numbers the step: "first" implies a second thing,
+          which turns the list into a doorway rather than the election.
+
+          The region name sits over the outline it labels. On the left it was the
           first thing read on the screen, which made the whole page look like it
           was about Michigan rather than about voting. */}
       <header className="flex items-start gap-4">
         <div className="min-w-0 flex-1">
           <h1 className="text-3xl leading-tight font-semibold tracking-tight">
-            First, pick a world.
+            Vote for your favorites
           </h1>
-          <p className="mt-2 text-[15px] text-[var(--ink-soft)]">
+          <p className="mt-2.5 text-[17px] leading-snug font-semibold">
+            First, pick a world.
+          </p>
+          <p className="mt-1 text-[15px] text-[var(--ink-soft)]">
             Then you&apos;ll cast one vote in an election for five seats.
           </p>
         </div>
