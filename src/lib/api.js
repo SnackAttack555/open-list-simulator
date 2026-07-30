@@ -9,7 +9,7 @@
  * quietly showing invented numbers.
  */
 
-import { EASE_ASKED_KEY, VOTED_STORAGE_KEY } from '../config.js'
+import { EASE_ASKED_KEY, PRIMER_SEEN_KEY, VOTED_STORAGE_KEY } from '../config.js'
 import { getTheme, getThemes } from '../data/index.js'
 import { mockTallies } from './mockElectorate.js'
 
@@ -58,6 +58,29 @@ export function hasBeenAskedEase() {
 export function markEaseAsked() {
   try {
     localStorage.setItem(EASE_ASKED_KEY, '1')
+  } catch {
+    /* nothing we can do, and nothing that should break the flow */
+  }
+}
+
+/**
+ * Has this browser already been shown the pre-ballot instruction?
+ *
+ * Marked when it is shown. Storage being unavailable means it shows again, which
+ * is the safe direction to fail: a repeat costs two seconds, a suppressed one
+ * costs a first-timer the two things they were missing.
+ */
+export function hasSeenPrimer() {
+  try {
+    return localStorage.getItem(PRIMER_SEEN_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
+export function markPrimerSeen() {
+  try {
+    localStorage.setItem(PRIMER_SEEN_KEY, '1')
   } catch {
     /* nothing we can do, and nothing that should break the flow */
   }

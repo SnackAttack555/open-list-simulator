@@ -20,6 +20,17 @@ export const QUOTA_SENTENCE = `${QUOTA_PCT}% of the vote wins 1 spot, ${QUOTA_PC
  */
 export const PRIMER_MS = 2200
 
+/**
+ * localStorage key recording that this browser has seen the pre-ballot
+ * instruction.
+ *
+ * Shown on the first ballot only. It exists to teach the two things a
+ * first-timer misses; by the second election the reader already knows them, and
+ * six of these on the way through six themes is the same nagging the ease
+ * question was cut back for.
+ */
+export const PRIMER_SEEN_KEY = 'ols.primer-seen.v1'
+
 /** 5-point ease scale, stored as 1..5. Order matters: index 0 is "easiest". */
 export const EASE_OPTIONS = [
   { value: 1, label: 'Very easy', emoji: '😃' },

@@ -22,28 +22,41 @@ export default function Start({ region, themes, onPick }) {
 
   return (
     <div className="mx-auto w-full max-w-[520px] px-5 pt-8 pb-10">
+      {/* The headline is an instruction, not a welcome. "Vote for your favorites"
+          over a list of worlds read as though the list *was* the ballot, and
+          people were picking Hogwarts and waiting for a result. Numbering the
+          step is what fixes it: "first" implies a second thing, so the list
+          becomes a doorway rather than the election.
+
+          The region name moves over the outline it labels. On the left it was the
+          first thing read on the screen, which made the whole page look like it
+          was about Michigan rather than about voting. */}
       <header className="flex items-start gap-4">
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium tracking-wide text-[var(--ink-soft)] uppercase">
-            {region.name}
-          </p>
-          <h1 className="mt-1 text-3xl leading-tight font-semibold tracking-tight">
-            Vote for your favorites
+          <h1 className="text-3xl leading-tight font-semibold tracking-tight">
+            First, pick a world.
           </h1>
           <p className="mt-2 text-[15px] text-[var(--ink-soft)]">
-            Five seats are up for election. Pick a world and cast one vote.
+            Then you&apos;ll cast one vote in an election for five seats.
           </p>
         </div>
-        {region.outline?.path && (
-          <svg
-            viewBox={region.outline.viewBox}
-            className="mt-1 w-[84px] shrink-0"
-            role="img"
-            aria-label={`Outline of ${region.name}`}
-          >
-            <path d={region.outline.path} fill="var(--accent)" opacity="0.14" />
-          </svg>
-        )}
+        {/* The label is tied to the region, not to the drawing — a state edition
+            added without an outline still has to say which state it is. */}
+        <div className="shrink-0 text-center">
+          <p className="text-xs font-medium tracking-wide text-[var(--ink-soft)] uppercase">
+            {region.name}
+          </p>
+          {region.outline?.path && (
+            <svg
+              viewBox={region.outline.viewBox}
+              className="mt-1 w-[84px]"
+              role="img"
+              aria-label={`Outline of ${region.name}`}
+            >
+              <path d={region.outline.path} fill="var(--accent)" opacity="0.14" />
+            </svg>
+          )}
+        </div>
       </header>
 
       <ul className="mt-7 flex flex-col gap-3">

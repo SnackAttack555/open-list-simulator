@@ -4,8 +4,10 @@ import {
   castVote,
   fetchResults,
   hasBeenAskedEase,
+  hasSeenPrimer,
   hasVoted,
   markEaseAsked,
+  markPrimerSeen,
   myVoteIn,
   submitEase,
 } from './lib/api.js'
@@ -55,9 +57,14 @@ export default function App() {
     }
 
     setSelection(null)
-    // The instruction screen first. Both of its lines are on the ballot too, but
-    // there they compete with twenty names and a carousel, and people were
-    // missing them.
+    // The instruction screen, on the first ballot only. Both of its lines are on
+    // the ballot too, but there they compete with twenty names and a carousel,
+    // and first-timers were missing them. A second visit doesn't need telling.
+    if (hasSeenPrimer()) {
+      setScreen('ballot')
+      return
+    }
+    markPrimerSeen()
     setScreen('primer')
   }
 
