@@ -4,9 +4,14 @@ A phone-first web app that lets someone cast a ballot in an open-list proportion
 election — for Hogwarts houses, Detroit sports legends, animation studios — and only
 then shows them how their vote was counted.
 
-The design constraint is **minimum explanation**. No tutorial, no primer. The ballot
-teaches by being obviously easy; the results teach by showing that the voter's side got
-represented even though it didn't win everything.
+The design constraint is **minimum explanation**. No tutorial and nothing to read before
+you start: the ballot teaches by being obviously easy, and the results teach by showing
+that the voter's side got represented even though it didn't win everything.
+
+The one exception is deliberate. Before their first ballot — once per browser, for two
+seconds, auto-advancing — people get the two sentences they were demonstrably missing:
+that they get one mark, and that there are more parties off the right edge. Both lines
+are on the ballot too, so that screen is emphasis rather than the only place they live.
 
 The ballot has two layouts, picked by CSS rather than by measuring the window so there
 is no flash of the wrong one. Narrow screens get a scroll-snap carousel with a chip row
