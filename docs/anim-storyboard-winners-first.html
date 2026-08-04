@@ -62,7 +62,7 @@
   <div class="panel new"><div class="knum">B1</div><span class="tag n">Opening · winners</span>
     <div class="ft">Here's who won.</div>
     <div data-winners="1"></div>
-    <div class="note">Vote counts included, as asked. Four colors visibly sharing five seats — the proportional result in one glance, before any explanation. Then: <b>"Here's how they were chosen."</b></div></div>
+    <div class="note">Vote counts included, as asked. Four colors visibly sharing five seats — the proportional result in one glance, before any explanation. Caption reads <b>"Now here's how they were chosen."</b>, and the button says <b>"See how they won"</b>.</div></div>
 
   <div class="panel gone"><div class="knum">old B2</div><span class="tag c">Cut</span>
     <div class="ft" style="text-decoration:line-through">1,000 votes were cast.</div>
@@ -131,6 +131,30 @@
     <div class="pay" style="border-color:#0e7490">You voted for <b>Tweety</b>. The Birds party won <b>16%</b> of the vote — just short of the 20% it takes to win one of 5 seats — so it elected no one this time.<br><br>In a district electing more than 5, a party this size would usually win a seat.</div>
     <div class="stat"><b>84% of voters</b> helped elect someone from their party.</div>
     <div class="meta">Same first paragraph, plus one sentence explaining that the shutout is a function of district size. True, and the most useful thing a shut-out voter could learn — but it is the app arguing rather than demonstrating, which every other frame avoids.</div></div>
+</div>
+
+<h2>Button weight</h2>
+<p class="flowline">Three tiers on the results screen. The exit is on screen for the whole story, so while it was a solid accent button it invited you to abandon the explanation as loudly as the next frame invited you to continue it.</p>
+<div class="diag">
+<div style="display:flex;flex-wrap:wrap;gap:26px;align-items:flex-start;margin-bottom:4px">
+
+  <div style="width:230px">
+    <div style="display:flex;align-items:center;justify-content:center;height:48px;border-radius:12px;background:#2f4858;color:#fff;font-weight:600;font-size:16px">See how they won</div>
+    <p style="font-size:12px;color:#5a6069;line-height:1.5;margin:9px 0 0"><b style="color:#14161a">Primary — solid accent.</b> Moves you through the explanation. Also "Next" and "What it means for your vote ↓", and "Cast my vote" on the ballot. One per screen.</p>
+  </div>
+
+  <div style="width:230px">
+    <div style="display:flex;align-items:center;justify-content:center;height:48px;border-radius:12px;border:2px solid #2f4858;color:#2f4858;font-weight:600;font-size:16px;background:transparent">Show me what would happen</div>
+    <p style="font-size:12px;color:#5a6069;line-height:1.5;margin:9px 0 0"><b style="color:#14161a">Secondary — outlined accent.</b> Reveals the winner-take-all comparison. Optional, but the reader is meant to want it.</p>
+  </div>
+
+  <div style="width:230px">
+    <div style="display:flex;align-items:center;justify-content:center;height:48px;border-radius:12px;border:1px solid #d9dade;color:#5a6069;font-weight:400;font-size:15px;background:transparent">Try another election</div>
+    <p style="font-size:12px;color:#5a6069;line-height:1.5;margin:9px 0 0"><b style="color:#14161a">Tertiary — quiet neutral.</b> The exit. Full touch target, no fill, muted text, lighter weight, narrower. Present throughout without competing.</p>
+  </div>
+
+</div>
+<p style="font-size:12.5px;color:#5a6069;margin:14px 0 0">Kept as a 48px target rather than shrunk to a text link: someone who has finished and wants the next election should not have to hunt for it. The demotion is in colour and weight, not in hit area.</p>
 </div>
 
 <h2>A · What is currently built, for reference</h2>

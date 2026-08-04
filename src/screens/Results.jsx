@@ -209,11 +209,18 @@ export default function Results({ theme, myVote, results, error, onRestart }) {
         </motion.div>
       )}
 
+      {/* Third tier, deliberately. This footer is on screen for the whole story,
+          so while it was a solid accent button it carried the same weight as the
+          one advancing the explanation — two equally loud buttons, one of which
+          abandons the thing the reader came for. The hierarchy is now: solid
+          accent moves you forward, outlined accent reveals the comparison, and
+          this is a quiet neutral exit. Still a full touch target, just not a
+          competing invitation. */}
       <footer className="mt-9 border-t border-[var(--line)] pt-4">
         <button
           type="button"
           onClick={onRestart}
-          className="min-h-13 w-full rounded-xl bg-[var(--accent)] font-semibold text-white"
+          className="mx-auto flex min-h-12 w-full max-w-[260px] items-center justify-center rounded-xl border border-[var(--line)] text-[15px] text-[var(--ink-soft)] transition-colors hover:border-[var(--ink-soft)] hover:text-[var(--ink)]"
         >
           Try another election
         </button>
