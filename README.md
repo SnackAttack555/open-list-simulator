@@ -12,9 +12,12 @@ The ballot has two layouts, picked by CSS rather than by measuring the window so
 is no flash of the wrong one. Narrow screens get a scroll-snap carousel with a chip row
 naming every party; at `lg` and up every card is on screen at once and both the chips and
 the swipe hint disappear, because a jump link to a card you are already looking at is
-noise. `docs/` holds the storyboards behind the results animation, including
-`anim-storyboard-winners-first.html`, which compares the shipped order against opening
-with the winners.
+noise. `docs/` holds the storyboards behind the results animation:
+`anim-storyboard-winners-first.html` is the built flow, `anim-storyboard-bars.html` is
+the same flow drawn with bars instead of dots (the two differ in three frames only, so
+they can be tested against each other), `anim-storyboard-dhondt.html` compares largest
+remainder with D'Hondt, and `anim-storyboards.html` is the original exploration, kept
+for the record and marked superseded.
 
 ## Running it
 

@@ -1,0 +1,218 @@
+<!doctype html><meta charset="utf-8">
+<title>Results flow — the bar-graph version of option B</title>
+<style>
+  body{font:15px/1.5 ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;background:#f7f7f5;color:#14161a;margin:0 auto;padding:30px 26px 70px;max-width:1250px}
+  h1{font-size:26px;margin:0 0 4px} h2{font-size:20px;margin:40px 0 2px}
+  .sub{color:#5a6069;margin:0 0 10px}
+  .diag{background:#fff;border:1px solid #d9dade;border-radius:12px;padding:14px 18px;margin:16px 0}
+  .diag li{margin:4px 0}
+  .chosen{border-left:4px solid #2f6f5e}
+  .strip{display:flex;flex-wrap:wrap;gap:14px;padding:10px 2px 4px;align-items:flex-start}
+  .panel{width:262px;background:#fff;border:1px solid #d9dade;border-radius:14px;padding:12px;box-sizing:border-box;position:relative;flex-shrink:0}
+  .knum{position:absolute;top:8px;right:11px;font-size:11px;color:#c2c6cc}
+  .ft{font-weight:600;font-size:12.5px;margin-bottom:9px;padding-right:22px;line-height:1.4}
+  .note{font-size:11.5px;color:#5a6069;margin-top:8px;line-height:1.45}
+  .meta{font-size:11px;color:#98a0a8;margin-top:8px;border-top:1px solid #eceef0;padding-top:6px;line-height:1.4}
+  .new{border-color:#2f6f5e;box-shadow:0 0 0 2px rgba(47,111,94,.13)}
+  .gone{opacity:.42;border-style:dashed}
+  .tag{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;border-radius:4px;padding:1.5px 6px;margin-bottom:7px}
+  .tag.n{background:#2f6f5e;color:#fff} .tag.c{background:#b0121a;color:#fff} .tag.s{background:#eceef0;color:#5a6069}
+
+  /* --- the bars ------------------------------------------------------- */
+  .brow{margin-bottom:14px}
+  .blab{font-size:10px;font-weight:600;margin-bottom:3px;display:flex;justify-content:space-between;gap:6px}
+  .blab .lo{font-weight:400;color:#5a6069;white-space:nowrap}
+  .track{position:relative;height:14px;background:#eceef0;border-radius:7px}
+  .fill{position:absolute;left:0;top:0;height:14px;border-radius:7px}
+  /* the part past the last completed group */
+  .stub{position:absolute;top:0;height:14px;border:1.5px dashed;background:transparent;box-sizing:border-box;border-radius:0 7px 7px 0}
+  .gl{position:absolute;top:-3px;bottom:-3px;width:0;border-left:1.5px dashed #a7adb5;z-index:2}
+  .chiprow{position:relative;height:19px;margin-top:4px}
+  .chip{position:absolute;top:1px;width:16px;height:16px;border-radius:4px;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center}
+  .chip.lo{background:#fff!important;border:1.5px dashed}
+  .qlab{font-size:9.5px;color:#5a6069;margin-top:-2px}
+
+  .card{border:1px solid #d9dade;border-radius:11px;overflow:hidden}
+  .chead{color:#fff;font-size:11.5px;font-weight:600;padding:6px 9px;display:flex;justify-content:space-between}
+  .crow{display:flex;align-items:center;gap:6px;padding:5.5px 9px;border-top:1px solid #eceef0;font-size:11.5px}
+  .cname{width:96px;flex-shrink:0} .ctrack{flex:1;height:7px;background:#eceef0;border-radius:4px;overflow:hidden}
+  .cfill{display:block;height:7px;border-radius:4px} .cvotes{font-size:10.5px;width:22px;text-align:right;color:#5a6069}
+  .winrow{background:rgba(26,110,168,.09);font-weight:600}
+  .wlist{list-style:none;padding:0;margin:0}
+  .wlist li{display:flex;align-items:center;gap:7px;padding:5.5px 2px;border-bottom:1px solid #eceef0;font-size:11.5px}
+  .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+  .wlist .who{font-weight:600} .wlist .pty{color:#5a6069;font-size:10.5px}
+  .pay{border:2px solid;border-radius:11px;padding:9px 10px;font-size:11.5px;line-height:1.5}
+  .stat{margin-top:9px;font-size:12.5px}
+  .stars{display:flex;align-items:center;gap:7px;margin:7px 0 8px;flex-wrap:wrap}
+  .seat{display:inline-flex;width:16px;height:16px;border-radius:4px;color:#fff;font-size:10px;font-weight:700;align-items:center;justify-content:center}
+  table{border-collapse:collapse;background:#fff;border:1px solid #d9dade;margin-top:16px;font-size:13.5px;width:100%}
+  th,td{border:1px solid #d9dade;padding:9px 12px;text-align:left;vertical-align:top}
+  th{background:#eef0f2;font-size:12.5px}
+  .flowline{font-size:12.5px;color:#5a6069;margin:6px 0 0}
+  .flowline b{color:#14161a}
+</style>
+
+<h1>The bar-graph version, brought up to date</h1>
+<p class="sub">The same flow that is built and live — <b>option B, seven frames, winners first</b> — with Act&nbsp;1 drawn as <b>bars</b> instead of dots. Every headline, caption and badge is the shipped wording, so the only variable between this and <code>anim-storyboard-winners-first.html</code> is the graphic. That is what makes the two comparable if you want to test dots against bars.</p>
+<p class="sub">Running example unchanged: <b>Detroit Sports Legends, 1,000 votes, 5 seats</b>, so a seat takes 200 votes (20%). Tigers 340 · Lions 260 · Red Wings 210 · Pistons 190. Three seats won outright, two on leftover votes. You voted for <b>Amon-Ra St.&nbsp;Brown</b> (Lions party).</p>
+
+<div class="diag chosen"><b>What the bars have to carry that the dots carried for free</b>
+<ul>
+<li><b>The quota is a line, not a countable group.</b> With dots, "200 votes" is 20 dots you can see gathered. Here it is a dashed rule at every 20%, and the reader has to accept that the spacing means 200 votes.</li>
+<li><b>Leftover votes are a stub past the last line</b>, drawn dash-outlined — where the dots version shows a partial group that visibly fails to fill.</li>
+<li><b>Every won seat still gets a ★</b>, sitting under the chunk of bar that earned it. Leftover seats get a dashed-outline ★, matching the dashed ring in the dots version.</li>
+<li><b>No scale caption.</b> "Every dot is about 10 votes" has no bar equivalent, so that line disappears — one less thing to read, one less thing anchoring the numbers to something concrete.</li>
+</ul>
+Full-scale axis: each track is 0–100% of all votes, with lines at 20/40/60/80. Honest, but it means the tallest bar fills only about a third of its track — the cost of not zooming the axis.</div>
+
+<h2>Bars · 7 frames</h2>
+<p class="flowline"><b>Order:</b> winners → votes by party → seats → leftover → inside your party → your vote → winner-take-all</p>
+<div class="strip">
+  <div class="panel new"><div class="knum">1</div><span class="tag n">Opening · winners</span>
+    <div class="ft">Here's who won.</div>
+    <div data-winners="1"></div>
+    <div class="note">Identical in both versions — no graphic here to differ. Then: <b>"See how they won."</b></div></div>
+
+  <div class="panel gone"><div class="knum">cut</div><span class="tag c">Cut</span>
+    <div class="ft" style="text-decoration:line-through">1,000 votes were cast.</div>
+    <div style="font-size:11.5px;color:#5a6069;line-height:1.6;margin-top:10px">
+      In the dots version this was the opening grid of 100 loose dots, and it was cut.<br><br>
+      A bar version never had a counterpart for it: there is no "here are all the votes before they sort themselves" picture when the picture is already one bar per party. Nothing to remove.
+    </div></div>
+
+  <div class="panel"><div class="knum">2</div><span class="tag s">Votes by party</span>
+    <div class="ft">1,000 votes were cast. Here are the votes by party.</div>
+    <div data-bars="votes"></div>
+    <div class="meta">Bars grow to each party's share of all votes. No quota line yet — one idea per frame.</div></div>
+
+  <div class="panel"><div class="knum">3</div><span class="tag s">Full groups</span>
+    <div class="ft">It takes 20% of the votes to win 1 of the 5 seats. That's 200 votes. Every group of 200 votes wins one seat — that fills 3 of the 5. The Lions, Tigers, and Red Wings Parties each win one seat, shown with a ★.</div>
+    <div data-bars="seats"></div>
+    <div class="meta">Lines drop across every bar at once, then the ★s land one at a time.</div></div>
+
+  <div class="panel"><div class="knum">4</div><span class="tag s">Leftover seats</span>
+    <div class="ft">2 seats are still open, and no party has another full group of 200. Pistons party and Tigers party had the most leftover votes, so they win the last seats.</div>
+    <div data-bars="leftover"></div>
+    <div class="meta">The dash-outlined stub past each party's last line is its leftover. The two biggest get a ★; the dashes are what still say "leftover" rather than "earned".</div></div>
+
+  <div class="panel"><div class="knum">5</div><span class="tag s">Act 2</span>
+    <div class="ft">So who fills the Lions party's seat?</div>
+    <div data-card="lions"></div>
+    <div class="note">The Lions party wins 1 seat. The person with the most votes wins.</div>
+    <div class="meta">Also identical in both versions — Act 2 is bars either way. Names in <b>ballot order</b> (alphabetical), then the list re-sorts by votes: Amon-Ra sits first and loses to Barry, second.</div></div>
+
+  <div class="panel"><div class="knum">6</div><span class="tag s">Your vote</span>
+    <div class="ft">Your vote</div>
+    <div class="pay" style="border-color:#1a6ea8"><b>Amon-Ra St. Brown</b> didn't win a seat, but the Lions party won 1 — your vote still elected someone from your party.</div>
+    <div class="stat"><b>100% of voters</b> helped elect someone from their party.</div>
+    <div class="meta">Skipped for a reader whose own party won nothing; the shortfall is stated here instead.</div></div>
+
+  <div class="panel"><div class="knum">7</div><span class="tag s">Winner-take-all</span>
+    <div class="ft">What if this was winner-take-all, like most US elections?</div>
+    <div class="stars">
+      <span class="seat" style="background:#c2540f">★</span><span class="seat" style="background:#c2540f">★</span><span class="seat" style="background:#c2540f">★</span><span class="seat" style="background:#c2540f">★</span><span class="seat" style="background:#c2540f">★</span>
+      <b style="color:#c2540f;font-size:11.5px">🐅 Tigers party</b>
+    </div>
+    <div style="font-size:11.5px;line-height:1.5">This district elected 5 people. Under traditional (winner take all) rules, there would be 5 nearby districts and the <b>🐅 Tigers party</b> would have won all of them even though they only won <b>34%</b> of the vote. Voters supporting the other parties, who made up <b>66%</b> of voters, would elect no representative from these districts.</div>
+    <div class="note">Voters represented: 34% under winner-take-all, 100% the way you just voted.</div></div>
+</div>
+
+<h2>Dots vs bars, where they actually differ</h2>
+<p class="flowline">Frames 1, 5, 6 and 7 are identical in both. Only frames 2, 3 and 4 change.</p>
+<table>
+<tr><th style="width:22%">Frame</th><th style="width:39%">Dots (built)</th><th style="width:39%">Bars (this file)</th></tr>
+<tr><td>2 · votes by party</td><td>100 dots already sorted into four party rows. Also states the scale: "every dot is about 10 votes"</td><td>Four bars, each a share of all votes. <b>No scale line</b> — nothing to count</td></tr>
+<tr><td>3 · full groups</td><td>A group of 20 dots is ringed and gets a ★. "200 votes" is a thing you could count if you wanted to</td><td>Dashed lines every 20% slice each bar; each full slice gets a ★. "200 votes" is a spacing you have to take on trust</td></tr>
+<tr><td>4 · leftover seats</td><td>A partial group visibly short of 20 dots, dashed ring, ★</td><td>A dash-outlined stub past the last line, ★</td></tr>
+<tr><td>Vertical space at phone width</td><td>Taller — rows of dots plus party labels</td><td><b>Shorter</b>, roughly two-thirds the height</td></tr>
+<tr><td>Reads at a glance</td><td>Slower to parse, but the quantity is literal</td><td>Faster to parse, but the quantity is abstract</td></tr>
+<tr><td>Holds up as votes grow</td><td>Dot count grows with the electorate; past ~2,000 votes the scale steps to 20, then 25</td><td><b>Unaffected</b> — a share is a share at any turnout</td></tr>
+</table>
+
+<div class="diag"><b>If you test these</b>
+<p style="margin:8px 0 0">The question worth asking is not which looks better but whether the reader can answer "how many votes does one seat take, and did my party get there?" after seeing it once. The dots version makes the quota countable, which is the whole reason it was chosen; the bars version is calmer, shorter, and survives any turnout without changing scale. Those are real trade-offs, not a matter of polish.</p>
+<p style="margin:8px 0 0">The honest risk in the bars version is frame 3: it asks the reader to accept that a spacing represents 200 votes, at exactly the moment the app is trying to make the quota feel concrete.</p>
+</div>
+
+<script>
+// Same spec object as the dots storyboard, so the two can't drift apart.
+const TOTAL = 1000, SEATS = 5, QUOTA_PCT = 100 / SEATS; // 20% per seat
+const PARTIES = [
+  {name:'Lions',     emoji:'🦁', color:'#1a6ea8', votes:260, full:1, leftVotes:60,  wonLeft:false},
+  {name:'Tigers',    emoji:'🐅', color:'#c2540f', votes:340, full:1, leftVotes:140, wonLeft:true},
+  {name:'Pistons',   emoji:'🏀', color:'#2f6f5e', votes:190, full:0, leftVotes:190, wonLeft:true},
+  {name:'Red Wings', emoji:'🏒', color:'#b0121a', votes:210, full:1, leftVotes:10,  wonLeft:false},
+];
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+
+function barsFor(mode) {
+  const showLines = mode === 'seats' || mode === 'leftover';
+  const showStub  = mode === 'leftover';
+  return PARTIES.map(p => {
+    const share = (p.votes / TOTAL) * 100;          // % of all votes
+    const earned = p.full * QUOTA_PCT;              // % locked into full groups
+    let s = '<div class="brow">';
+    s += `<div class="blab"><span>${p.emoji} ${esc(p.name)} party · ${p.votes} votes</span>` +
+         (showStub ? `<span class="lo">${p.leftVotes} left over</span>` : '') + '</div>';
+
+    s += '<div class="track">';
+    // Strictly inside the track: a line drawn at 100% sits on the track's own
+    // end and reads as a border rather than as a seat boundary.
+    if (showLines) for (let g = 1; g * QUOTA_PCT < 100; g++) {
+      s += `<div class="gl" style="left:${g * QUOTA_PCT}%"></div>`;
+    }
+    if (showStub) {
+      // solid up to the last completed group, dashed outline for the remainder
+      if (earned > 0) s += `<div class="fill" style="width:${earned}%;background:${p.color}"></div>`;
+      s += `<div class="stub" style="left:${earned}%;width:${share - earned}%;border-color:${p.color}` +
+           (earned === 0 ? ';border-radius:7px' : '') + '"></div>';
+    } else {
+      s += `<div class="fill" style="width:${share}%;background:${p.color}"></div>`;
+    }
+    s += '</div>';
+
+    // ★ under the chunk that earned it
+    if (showLines) {
+      s += '<div class="chiprow">';
+      for (let g = 0; g < p.full; g++) {
+        const mid = g * QUOTA_PCT + QUOTA_PCT / 2;
+        s += `<span class="chip" style="background:${p.color};left:calc(${mid}% - 8px)">★</span>`;
+      }
+      if (showStub && p.wonLeft) {
+        const mid = (earned + share) / 2;
+        s += `<span class="chip lo" style="border-color:${p.color};color:${p.color};left:calc(${mid}% - 8px)">★</span>`;
+      }
+      s += '</div>';
+    }
+    return s + '</div>';
+  }).join('') + (showLines
+    ? '<div class="qlab">Dashed lines every 20% — one seat each. Track is 0–100% of all votes.</div>'
+    : '');
+}
+document.querySelectorAll('[data-bars]').forEach(el => { el.innerHTML = barsFor(el.dataset.bars); });
+
+const CARDS = {
+  lions: {label:'🦁 Lions party', seats:'1 seat', color:'#1a6ea8', top:96, rows:[
+    {n:'Amon-Ra St. Brown', v:48}, {n:'Barry Sanders', v:96, win:true},
+    {n:'Bobby Layne', v:32}, {n:'Calvin Johnson', v:62}, {n:'Night Train Lane', v:22}]},
+};
+document.querySelectorAll('[data-card]').forEach(el => {
+  const c = CARDS[el.dataset.card];
+  el.innerHTML = `<div class="card"><div class="chead" style="background:${c.color}"><span>${c.label}</span><span>${c.seats}</span></div>` +
+    c.rows.map(r => `<div class="crow${r.win?' winrow':''}"><span class="cname">${esc(r.n)}${r.win?' ★':''}</span><span class="ctrack"><span class="cfill" style="width:${Math.round(r.v/c.top*100)}%;background:${c.color}"></span></span><span class="cvotes">${r.v}</span></div>`).join('') +
+    `</div>`;
+});
+
+const WINNERS = [
+  {n:'Ty Cobb',        p:'Tigers party',    c:'#c2540f', v:118},
+  {n:'Barry Sanders',  p:'Lions party',     c:'#1a6ea8', v:96},
+  {n:'Miguel Cabrera', p:'Tigers party',    c:'#c2540f', v:79},
+  {n:'Gordie Howe',    p:'Red Wings party', c:'#b0121a', v:71},
+  {n:'Isiah Thomas',   p:'Pistons party',   c:'#2f6f5e', v:63},
+];
+document.querySelectorAll('[data-winners]').forEach(el => {
+  el.innerHTML = `<ul class="wlist">` + WINNERS.map(w =>
+    `<li><span class="dot" style="background:${w.c}"></span><span><span class="who">${esc(w.n)}</span><br><span class="pty">${w.p} · ${w.v} votes</span></span></li>`).join('') + `</ul>`;
+});
+</script>
