@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
 import { ballotOrder, partyName } from '../data/index.js'
+import { VIZ } from '../lib/variant.js'
 
 /**
  * The results explained, one tap at a time.
@@ -82,12 +83,27 @@ function gridFor(count) {
 const rowSpacing = (dotsPerSeat) => (GROUP.w - GROUP.pad * 2) / Math.max(1, dotsPerSeat - 1)
 const dotXFor = (dotsPerSeat) => (i) => GROUP.x + GROUP.pad + i * rowSpacing(dotsPerSeat)
 
-export default function SeatStory({ theme, result, myVote, onDone, onFinish }) {
+/**
+ * `viz` picks how Act 1 is drawn — 'dots' as always, or 'bars' for the arm of
+ * the user test that is being compared against it. It is defaulted from the
+ * resolved URL rather than threaded down through App and Results, because
+ * nothing between here and the address bar has any business knowing about it,
+ * and rolling the experiment back should be one import and one branch.
+ *
+ * Deliberately not part of `buildModel`'s inputs. Every headline, note, step
+ * count and pip comes out of that model, so keeping the variant out of it is
+ * what makes "the two arms are the same story, drawn twice" true by
+ * construction instead of true by inspection. It would also break the reveal:
+ * the model's identity feeds the step timer below, so a new model mid-visit
+ * restarts the animation from step 0.
+ */
+export default function SeatStory({ theme, result, myVote, onDone, onFinish, viz = VIZ }) {
   const reduced = useReducedMotion()
   const [beat, setBeat] = useState(0)
   const [step, setStep] = useState(0)
 
   const model = useMemo(() => buildModel(theme, result, myVote), [theme, result, myVote])
+  const vocab = useMemo(() => vocabFor(viz, model, result), [viz, model, result])
   const beats = model.beats
   const current = beats[Math.min(beat, beats.length - 1)]
   const isLast = beat >= beats.length - 1
@@ -120,17 +136,27 @@ export default function SeatStory({ theme, result, myVote, onDone, onFinish }) {
           {current.headline}
         </p>
 
-        {current.stage === 'winners' ? (
+        {/* Three named stages, each tested for. This was a chained ternary
+            whose last arm was an implicit else, so a typo'd stage rendered the
+            candidate card instead of failing — and with two Act 1 renderers to
+            choose between, that kind of silence is exactly what would let one
+            arm of a test quietly serve the wrong graphic. */}
+        {current.stage === 'winners' && (
           <WinnersStage winners={model.winners} myVote={myVote} reduced={reduced} />
-        ) : current.stage === 'dots' ? (
-          <DotStage model={model} phase={current.phase} step={step} reduced={reduced} />
-        ) : (
+        )}
+        {current.stage === 'dots' &&
+          (viz === 'bars' ? (
+            <BarStage model={model} phase={current.phase} step={step} reduced={reduced} />
+          ) : (
+            <DotStage model={model} phase={current.phase} step={step} reduced={reduced} />
+          ))}
+        {current.stage === 'cands' && (
           <CandidateStage model={model} step={step} reduced={reduced} />
         )}
 
-        {current.note(step) && (
+        {current.note(step, vocab) && (
           <p className="mt-3 text-[13px] leading-snug text-[var(--ink-soft)]">
-            {current.note(step)}
+            {current.note(step, vocab)}
           </p>
         )}
       </div>
@@ -396,6 +422,162 @@ function Dots({ dots, myDot, dotR, spread, reduced }) {
 }
 
 /* ------------------------------------------------------------------ *
+ * Act 1, the other way — every vote as a share of one bar
+ * ------------------------------------------------------------------ */
+
+/**
+ * The same three beats as `DotStage`, drawn as four bars on a 0–100% track.
+ *
+ * Ported from `docs/anim-storyboard-bars.html`, which is the reviewed spec —
+ * the arithmetic and the staging are not re-derived here. HTML and CSS rather
+ * than SVG: percentage widths are exactly the right primitive for a track that
+ * *is* 100% of the votes, the labels render at real font sizes instead of
+ * viewBox-scaled ones, and `CandidateStage` already uses these same primitives,
+ * so Act 1 and Act 2 read as one piece.
+ *
+ * The reveal logic is `DotStage`'s, unchanged: `revealed` and `settled` are
+ * sets of `row.key`, filled from the same `fullGroupOrder` / `leftoverOrder`,
+ * so the two arms circle the same groups in the same order on the same timer.
+ *
+ * The card must not change height between the three beats, and there is no
+ * `stageHeight` viewBox to hold it here — so the chip row, the leftover figures
+ * and the caption are all rendered in every phase and hidden with
+ * `visibility`, which reserves their space. `display: none` or a conditional
+ * mount would make the card jump as the story advances.
+ */
+function BarStage({ model, phase, step, reduced }) {
+  const { seatPct } = model
+  const showLines = phase === 'seats' || phase === 'leftover'
+  const showStub = phase === 'leftover'
+
+  const revealed = new Set(
+    (phase === 'seats' ? model.fullGroupOrder : phase === 'leftover' ? model.leftoverOrder : [])
+      .slice(0, step)
+      .map((r) => r.key),
+  )
+  const settled = new Set(phase === 'leftover' ? model.fullGroupOrder.map((r) => r.key) : [])
+  const seen = (key) => key != null && (revealed.has(key) || settled.has(key))
+
+  // Strictly inside the track: a line at 100% sits on the track's own end and
+  // reads as a border rather than as a seat boundary.
+  const lines = []
+  for (let g = 1; g * seatPct < 100; g += 1) lines.push(g * seatPct)
+
+  const grow = (pct) => ({
+    initial: reduced ? false : { width: 0 },
+    animate: { width: `${pct}%` },
+    transition: { duration: reduced ? 0 : 0.5, ease: [0.22, 1, 0.36, 1] },
+  })
+
+  return (
+    <div className="mt-3" role="img" aria-label={model.stageLabel(phase)}>
+      {model.parties.map((party) => {
+        const stubPct = Math.max(0, party.sharePct - party.earnedPct)
+        return (
+          <div key={party.id} className="mb-3.5">
+            <div className="mb-1 flex items-baseline justify-between gap-1.5 text-[11px] font-semibold">
+              <span className="truncate">
+                {party.name} · {party.votes.toLocaleString()} votes
+              </span>
+              <span
+                className="shrink-0 font-normal whitespace-nowrap text-[var(--ink-soft)]"
+                style={{ visibility: showStub ? 'visible' : 'hidden' }}
+              >
+                {/* Rounded, like the dots version: the quota is votes ÷ 5 and
+                    rarely whole, and "136.8 votes left over" raises a question
+                    the story doesn't need to answer. */}
+                {Math.round(party.leftoverVotes).toLocaleString()} left over
+              </span>
+            </div>
+
+            <div className="relative h-3.5 rounded-full bg-[var(--line)]">
+              {showLines &&
+                lines.map((left) => (
+                  <span
+                    key={left}
+                    className="gridline-in"
+                    style={{
+                      position: 'absolute',
+                      left: `${left}%`,
+                      top: -3,
+                      bottom: -3,
+                      borderLeft: '1.5px dashed var(--ink-soft)',
+                    }}
+                  />
+                ))}
+              {/* Solid up to the last completed group. On the leftover beat the
+                  bar splits there and the remainder becomes a dashed outline —
+                  the same distinction the dots version makes with a dashed
+                  ring. */}
+              <motion.span
+                {...grow(showStub ? party.earnedPct : party.sharePct)}
+                className="absolute top-0 left-0 block h-3.5 rounded-full"
+                style={{ backgroundColor: party.color }}
+              />
+              {showStub && stubPct > 0 && (
+                <motion.span
+                  {...grow(stubPct)}
+                  className="absolute top-0 block box-border h-3.5"
+                  style={{
+                    left: `${party.earnedPct}%`,
+                    border: `1.5px dashed ${party.color}`,
+                    borderRadius: party.earnedPct === 0 ? 7 : '0 7px 7px 0',
+                    // A 10-vote leftover is 1% of the track and would otherwise
+                    // be invisible at the exact moment it is being explained.
+                    minWidth: 6,
+                  }}
+                />
+              )}
+            </div>
+
+            {/* Always mounted, so the card's height is the same in all three
+                phases. */}
+            <div className="relative mt-1 h-[19px]">
+              {party.fullKeys.map(
+                (key, g) =>
+                  seen(key) && (
+                    <span
+                      key={key}
+                      className="seat-chip"
+                      style={{
+                        left: `calc(${g * seatPct + seatPct / 2}% - 8px)`,
+                        backgroundColor: party.color,
+                      }}
+                    >
+                      ★
+                    </span>
+                  ),
+              )}
+              {showStub && party.wonLeftover && seen(party.partKey) && (
+                <span
+                  className="seat-chip"
+                  style={{
+                    left: `calc(${(party.earnedPct + party.sharePct) / 2}% - 8px)`,
+                    backgroundColor: 'var(--card)',
+                    border: `1.5px dashed ${party.color}`,
+                    color: party.color,
+                  }}
+                >
+                  ★
+                </span>
+              )}
+            </div>
+          </div>
+        )
+      })}
+
+      <p
+        className="text-[11px] leading-snug text-[var(--ink-soft)]"
+        style={{ visibility: showLines ? 'visible' : 'hidden' }}
+      >
+        Dashed lines every {Math.round(seatPct)}% — one seat each. The track is every vote
+        cast.
+      </p>
+    </div>
+  )
+}
+
+/* ------------------------------------------------------------------ *
  * Act 2 — inside the voter's own party, in one continuous sequence
  * ------------------------------------------------------------------ */
 
@@ -476,6 +658,29 @@ function CandidateStage({ model, step, reduced }) {
 /* ------------------------------------------------------------------ *
  * Model
  * ------------------------------------------------------------------ */
+
+/**
+ * The strings that have to name the graphic, and nothing else.
+ *
+ * Exactly one line qualifies. Both versions say what the unit of the picture is
+ * and where the reader's own vote sits in it; the dots version can point at one
+ * dot, and the bars version can only name the bar, which is the trade-off being
+ * tested rather than a gap to paper over.
+ */
+function vocabFor(viz, model, result) {
+  if (viz === 'bars') {
+    return {
+      scale: `Each bar is that party’s share of all ${result.totalVotes.toLocaleString()} votes${
+        model.myDot ? `, and yours is in the ${partyName(model.myList)} bar` : ''
+      }.`,
+    }
+  }
+  return {
+    scale: `Every dot is about ${model.votesPerDot.toLocaleString()} ${
+      model.votesPerDot === 1 ? 'vote' : 'votes'
+    }${model.myDot ? ', and the colored dot includes yours' : ''}.`,
+  }
+}
 
 function buildModel(theme, result, myVote) {
   const quota = result.quota
@@ -572,6 +777,36 @@ function buildModel(theme, result, myVote) {
   const myDot = myVote ? dots.find((d) => d.listId === myVote.listId) : null
   if (myDot) myDot.isMine = true
 
+  /**
+   * The same election expressed as shares rather than as countable dots, for
+   * the bars variant.
+   *
+   * Computed unconditionally and with no reference to the variant, so it costs
+   * one map either way and neither arm can end up with a model the other
+   * doesn't have. The group keys are read back out of `rows` rather than
+   * recomputed, which is what guarantees the two graphics circle the same
+   * groups in the same order: `fullGroupOrder` and `leftoverOrder` are built
+   * from those same rows.
+   */
+  const seatPct = 100 / result.seats
+  const parties = result.lists.map((list) => {
+    const listRows = rows.filter((r) => r.listId === list.id)
+    return {
+      id: list.id,
+      name: partyName(list),
+      color: list.color,
+      votes: list.votes,
+      // Guarded: an election with no votes at all would otherwise write
+      // "NaN%" into a width and collapse the whole graphic.
+      sharePct: result.totalVotes > 0 ? (list.votes / result.totalVotes) * 100 : 0,
+      earnedPct: list.quotaSeats * seatPct,
+      fullKeys: listRows.filter((r) => r.kind === 'full').map((r) => r.key),
+      partKey: listRows.find((r) => r.kind === 'partial')?.key ?? null,
+      leftoverVotes: Math.max(0, list.votes - list.quotaSeats * quota),
+      wonLeftover: list.remainderSeats > 0,
+    }
+  })
+
   const fullGroupOrder = rows.filter((r) => r.kind === 'full')
   const leftoverOrder = rows
     .filter((r) => r.kind === 'partial' && r.wonLeftover)
@@ -637,10 +872,12 @@ function buildModel(theme, result, myVote) {
       phase: 'gather',
       headline: `${result.totalVotes.toLocaleString()} votes were cast. Here are the votes by party.`,
       steps: 0,
-      note: () =>
-        `Every dot is about ${votesPerDot.toLocaleString()} ${votesPerDot === 1 ? 'vote' : 'votes'}${
-          myDot ? ', and the colored dot includes yours' : ''
-        }.`,
+      // The one line in the whole story that has to describe the graphic, so
+      // it is the one line that depends on which graphic is drawn. It comes in
+      // as an argument rather than being built here, because a `beats` array
+      // that knew about the variant would stop guaranteeing that the two arms
+      // are the same story.
+      note: (step, vocab) => vocab.scale,
     },
     {
       stage: 'dots',
@@ -700,6 +937,9 @@ function buildModel(theme, result, myVote) {
     dots,
     myDot,
     dotR,
+    votesPerDot,
+    parties,
+    seatPct,
     winners: result.winners,
     stageHeight,
     fullGroupOrder,

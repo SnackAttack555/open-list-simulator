@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { DEFAULT_REGION, getRegion, getTheme, getThemes } from './data/index.js'
 import {
   castVote,
@@ -11,6 +11,7 @@ import {
   myVoteIn,
   submitEase,
 } from './lib/api.js'
+import { resolveTheme } from './lib/variant.js'
 import Start from './screens/Start.jsx'
 import Primer from './screens/Primer.jsx'
 import Ballot from './screens/Ballot.jsx'
@@ -67,6 +68,27 @@ export default function App() {
     markPrimerSeen()
     setScreen('primer')
   }
+
+  /**
+   * `?theme=detroit` opens straight onto that election.
+   *
+   * For user testing: both arms have to see the same contest, and a respondent
+   * who picks their own world is comparing four parties they chose against four
+   * somebody else chose. An unknown id falls through to the picker rather than
+   * erroring — a broken link should still be a usable site.
+   *
+   * Once only. In StrictMode the effect runs twice, and the second pass would
+   * find the primer already marked as seen and skip it — so the pinned link
+   * would show a different first screen in dev than in production.
+   */
+  const pinned = useRef(false)
+  useEffect(() => {
+    if (pinned.current) return
+    pinned.current = true
+    const id = resolveTheme(window.location.search, themes.map((t) => t.id))
+    if (id) openTheme(id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const goStart = () => {
     setScreen('start')

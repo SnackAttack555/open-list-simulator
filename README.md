@@ -24,6 +24,13 @@ they can be tested against each other), `anim-storyboard-dhondt.html` compares l
 remainder with D'Hondt, and `anim-storyboards.html` is the original exploration, kept
 for the record and marked superseded.
 
+Both graphics are live, picked by URL: `?viz=bars` draws Act 1 of the results as bars,
+anything else draws it as dots, and `?theme=detroit` skips the world picker so two arms of
+a user test vote in the same contest. **`docs/ab-test-dots-vs-bars.md` is the hand-off** —
+the links, and the things that would invalidate the study. The variant never reaches
+`buildModel()`, so the two arms are guaranteed to be the same story with one graphic
+swapped rather than two flows that have to be kept in step by hand.
+
 ## Running it
 
 ```bash
