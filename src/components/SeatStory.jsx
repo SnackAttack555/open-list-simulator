@@ -171,13 +171,25 @@ export default function SeatStory({ theme, result, myVote, onDone, onFinish, viz
           Back
         </button>
         {/* At the end the button keeps working rather than greying out — it
-            hands the reader on to the results instead of dead-ending. */}
+            hands the reader on to the results instead of dead-ending.
+
+            But it stops being the loud one. All it does at that point is
+            scroll, and the text it scrolls to is already on screen — a solid
+            accent button promising "what it means for your vote" and then
+            nudging the page a few hundred pixels is a broken promise. Worse, it
+            outshouted the one real action further down. So on the last beat it
+            drops to the same quiet weight as Back, which is what it now is:
+            navigation, not the next step. */}
         <button
           type="button"
           onClick={() =>
             isLast ? onFinish?.() : setBeat((b) => Math.min(beats.length - 1, b + 1))
           }
-          className="min-h-12 flex-1 rounded-xl bg-[var(--accent)] font-semibold text-white"
+          className={
+            isLast
+              ? 'min-h-12 flex-1 rounded-xl border border-[var(--line)] text-[15px] text-[var(--ink-soft)] transition-colors hover:border-[var(--ink-soft)] hover:text-[var(--ink)]'
+              : 'min-h-12 flex-1 rounded-xl bg-[var(--accent)] font-semibold text-white'
+          }
         >
           {isLast ? 'What it means for your vote ↓' : (current.nextLabel ?? 'Next')}
         </button>
@@ -570,8 +582,7 @@ function BarStage({ model, phase, step, reduced }) {
         className="text-[11px] leading-snug text-[var(--ink-soft)]"
         style={{ visibility: showLines ? 'visible' : 'hidden' }}
       >
-        Dashed lines every {Math.round(seatPct)}% — one seat each. The track is every vote
-        cast.
+        Dashed lines every {Math.round(seatPct)}% — one seat each.
       </p>
     </div>
   )

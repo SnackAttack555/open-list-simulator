@@ -97,9 +97,16 @@ export default function Results({ theme, myVote, results, error, onRestart }) {
           {/* The winners are the story's opening beat now, so they are not
               repeated here. What is left is what the result meant for you. */}
           {mine && (
+            /* A tinted panel with a coloured left rule, not a coloured ring.
+               A rounded rectangle outlined in 2px of accent colour is what a
+               button looks like, and this one sat a few lines above an actual
+               outlined button — so the sentence that is the whole payoff read
+               as a control nobody could work out how to press. A left rule and
+               a wash of the party's colour say "this is about you" without
+               claiming to be tappable. */
             <div
-              className="rounded-2xl border-2 px-4 py-4"
-              style={{ borderColor: mine.color }}
+              className="rounded-xl border-l-4 px-4 py-3.5"
+              style={{ borderColor: mine.color, backgroundColor: `${mine.color}12` }}
             >
               {mine.candidateElected ? (
                 <p className="text-[17px]">
@@ -135,11 +142,17 @@ export default function Results({ theme, myVote, results, error, onRestart }) {
             What if this was winner-take-all, like most US elections?
           </h2>
 
+          {/* Solid, because by the time this is on screen it is the only thing
+              left to do. It used to be outlined so as not to compete with the
+              story's Next button — but the story has finished, that button is
+              now a quiet scroll cue, and the exit in the footer stays quiet
+              until the comparison is open. Exactly one loud button at any
+              moment, and it is always the next step. */}
           {!showWta ? (
             <button
               type="button"
               onClick={() => setShowWta(true)}
-              className="mt-3 min-h-13 w-full rounded-xl border-2 border-[var(--accent)] px-4 py-3 font-semibold text-[var(--accent)]"
+              className="mt-3 min-h-13 w-full rounded-xl bg-[var(--accent)] px-4 py-3 font-semibold text-white"
             >
               Show me what would happen
             </button>
