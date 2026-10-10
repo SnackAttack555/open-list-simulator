@@ -45,7 +45,7 @@ export default function Primer({ theme, onDone }) {
           Vote for one candidate.
         </span>
         <span className="mt-4 block text-[17px] text-[var(--ink-soft)] lg:hidden">
-          Scroll to see more parties.
+          Swipe to see more parties.
         </span>
       </span>
     </button>

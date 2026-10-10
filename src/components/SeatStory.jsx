@@ -689,7 +689,7 @@ function vocabFor(viz, model, result) {
   return {
     scale: `Every dot is about ${model.votesPerDot.toLocaleString()} ${
       model.votesPerDot === 1 ? 'vote' : 'votes'
-    }${model.myDot ? ', and the colored dot includes yours' : ''}.`,
+    }${model.myDot ? ', and the circled dot includes yours' : ''}.`,
   }
 }
 

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import BallotBoxIcon from '../components/BallotBoxIcon.jsx'
 import { ballotOrder, partyName } from '../data/index.js'
+import { SEATS } from '../config.js'
 
 /**
  * The ballot: one party per card.
@@ -211,6 +212,12 @@ export default function Ballot({ theme, selection, onSelect, onCast, onBack }) {
           ← All elections
         </button>
         <h1 className="mt-1 text-2xl font-semibold tracking-tight">{theme.name}</h1>
+        {/* People now arrive straight here on a ?theme= link, skipping the
+            picker — which was the only screen that said what was being voted
+            on. Without it the ballot is twenty names and no stakes. */}
+        <p className="mt-0.5 text-[13px] text-[var(--ink-soft)]">
+          An election for {SEATS} seats.
+        </p>
       </header>
 
       {/* Chip row: proves every party exists, and jumps to one. Pointless once
@@ -256,9 +263,20 @@ export default function Ballot({ theme, selection, onSelect, onCast, onBack }) {
           impossible to miss, the second is the idea the app exists to teach. Run
           together at one size they competed, and people skimmed both. */}
       <div className="mt-3 px-4">
-        <p className="text-[19px] leading-tight font-semibold">Vote for one candidate.</p>
-        <p className="mt-1 text-[15px] leading-snug text-[var(--ink-soft)]">
-          Your vote also counts toward that candidate&apos;s party.
+        {/* Kept to one line at phone width: wrapped across two it read as a
+            paragraph and got skimmed, which is the one thing this line cannot
+            afford. Hence the numeral and no comma. On a 320px screen it still
+            runs over, so text-balance splits it after "candidate" rather than
+            orphaning the last word. */}
+        <p className="text-[19px] leading-tight font-semibold text-balance">
+          Vote for 1 candidate from any party
+        </p>
+        {/* The swipe hint was at the bottom of the ballot, below four cards
+            nobody knew were there — which is a sign you can only read after you
+            no longer need it. It is a deck now, next to the instruction it
+            qualifies, and only on the layout where anything is off-screen. */}
+        <p className="mt-1 text-[15px] leading-snug text-[var(--ink-soft)] lg:hidden">
+          Swipe to see more parties.
         </p>
       </div>
 
@@ -343,10 +361,6 @@ export default function Ballot({ theme, selection, onSelect, onCast, onBack }) {
           </section>
         ))}
       </div>
-
-      <p className="px-4 pb-2 text-center text-xs text-[var(--ink-soft)] lg:hidden">
-        Swipe to see the other parties
-      </p>
 
       {/* Sticky bar: the selection survives swiping, so you can wander the whole
           ballot holding your choice. */}
