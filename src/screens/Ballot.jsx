@@ -215,8 +215,8 @@ export default function Ballot({ theme, selection, onSelect, onCast, onBack }) {
         {/* People now arrive straight here on a ?theme= link, skipping the
             picker — which was the only screen that said what was being voted
             on. Without it the ballot is twenty names and no stakes. */}
-        <p className="mt-0.5 text-[13px] text-[var(--ink-soft)]">
-          An election for {SEATS} seats.
+        <p className="mt-1 text-[16px] leading-snug font-medium">
+          An election for {SEATS} seats
         </p>
       </header>
 
