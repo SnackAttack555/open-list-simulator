@@ -1,16 +1,16 @@
 /**
  * The only place the app talks to the server.
  *
- * In `npm run dev` there is no Pages Function to call, so requests fall back to a
- * local mock that generates a plausible electorate. That keeps the whole flow
- * playable without wrangler running. Under `wrangler pages dev` and in production
- * the real endpoints answer and the mock never runs — the fallback is gated on
+ * In `npm run dev` there is no Worker to call, so requests fall back to a local
+ * mock that generates a plausible electorate. That keeps the whole flow playable
+ * without wrangler running. Under `wrangler dev` and in production the real
+ * endpoints answer and the mock never runs — the fallback is gated on
  * import.meta.env.DEV so a production outage surfaces as an error rather than
  * quietly showing invented numbers.
  */
 
-import { EASE_ASKED_KEY, PRIMER_SEEN_KEY, VOTED_STORAGE_KEY } from '../config.js'
-import { getTheme, getThemes } from '../data/index.js'
+import { VOTED_STORAGE_KEY } from '../config.js'
+import { getTheme } from '../data/index.js'
 import { mockTallies } from './mockElectorate.js'
 
 const isDev = import.meta.env?.DEV ?? false
@@ -39,51 +39,16 @@ export function myVoteIn(themeId) {
 }
 
 /**
- * Has this browser already been asked how the ballot felt?
+ * Is this the first election this browser has taken part in?
  *
- * Marked when the question is *shown*, not when it is answered — someone who
- * skipped it has been asked, and asking again is the nagging the flag exists to
- * prevent. Storage being unavailable means the question comes back, which is the
- * safe direction to fail: a duplicate answer costs one row, a suppressed one
- * costs the statistic.
+ * True until a ballot exists for some *other* theme. Ballots in this theme
+ * don't count, so a repeat visitor to their first election keeps seeing it the
+ * way they saw it the first time rather than having it rearranged under them.
+ * Storage being unavailable reads as a first run, which is the direction that
+ * keeps the page's argument intact.
  */
-export function hasBeenAskedEase() {
-  try {
-    return localStorage.getItem(EASE_ASKED_KEY) === '1'
-  } catch {
-    return false
-  }
-}
-
-export function markEaseAsked() {
-  try {
-    localStorage.setItem(EASE_ASKED_KEY, '1')
-  } catch {
-    /* nothing we can do, and nothing that should break the flow */
-  }
-}
-
-/**
- * Has this browser already been shown the pre-ballot instruction?
- *
- * Marked when it is shown. Storage being unavailable means it shows again, which
- * is the safe direction to fail: a repeat costs two seconds, a suppressed one
- * costs a first-timer the two things they were missing.
- */
-export function hasSeenPrimer() {
-  try {
-    return localStorage.getItem(PRIMER_SEEN_KEY) === '1'
-  } catch {
-    return false
-  }
-}
-
-export function markPrimerSeen() {
-  try {
-    localStorage.setItem(PRIMER_SEEN_KEY, '1')
-  } catch {
-    /* nothing we can do, and nothing that should break the flow */
-  }
+export function isFirstRun(themeId) {
+  return Object.keys(myBallots()).every((id) => id === themeId)
 }
 
 function rememberVote(themeId, listId, candidateId) {
@@ -106,7 +71,7 @@ async function postJson(path, body) {
   return res.json()
 }
 
-/** @returns {Promise<{tallies: Array, realVotes: number, seedVotes: number, ease: object}>} */
+/** @returns {Promise<{tallies: Array, realVotes: number, seedVotes: number}>} */
 export async function fetchResults(themeId, regionId) {
   try {
     const res = await fetch(`api/results/${encodeURIComponent(themeId)}`)
@@ -118,21 +83,7 @@ export async function fetchResults(themeId, regionId) {
   }
 }
 
-/** Real vote counts per theme, for the start screen. */
-export async function fetchThemeCounts(regionId) {
-  try {
-    const res = await fetch('api/counts')
-    if (!res.ok) throw new Error(`counts responded ${res.status}`)
-    return await res.json()
-  } catch (err) {
-    if (!isDev) throw err
-    return mockCounts(regionId)
-  }
-}
-
 /**
- * @returns {Promise<{token: string|null}>} token is needed to attach an ease answer.
- *
  * The local "already voted" record is written only once the server has actually
  * answered. Writing it first would burn someone's vote on a dropped request:
  * locked out of voting again, on a ballot that never reached the database. A
@@ -152,15 +103,6 @@ export async function castVote({ themeId, listId, candidateId, regionId }) {
   }
 }
 
-export async function submitEase({ token, ease }) {
-  try {
-    return await postJson('api/ease', { token, ease })
-  } catch (err) {
-    if (!isDev) throw err
-    return { ok: true }
-  }
-}
-
 // --- Dev-only mock --------------------------------------------------------
 // Session-scoped, so a vote cast in dev visibly moves the numbers.
 
@@ -170,12 +112,7 @@ function mockState(themeId, regionId) {
   if (!mockStore.has(themeId)) {
     const theme = getTheme(themeId, regionId)
     if (!theme) throw new Error(`Unknown theme "${themeId}"`)
-    mockStore.set(themeId, {
-      tallies: mockTallies(theme),
-      realVotes: 0,
-      seedVotes: 800,
-      ease: { 1: 210, 2: 340, 3: 90, 4: 28, 5: 11 },
-    })
+    mockStore.set(themeId, { tallies: mockTallies(theme), realVotes: 0, seedVotes: 800 })
   }
   return mockStore.get(themeId)
 }
@@ -190,12 +127,4 @@ function mockCastVote({ themeId, listId, candidateId, regionId }) {
   if (row) row.votes += 1
   state.realVotes += 1
   return { ok: true, recorded: true, token: 'dev-token' }
-}
-
-function mockCounts(regionId) {
-  const counts = {}
-  for (const theme of getThemes(regionId)) {
-    counts[theme.id] = mockStore.get(theme.id)?.realVotes ?? 0
-  }
-  return counts
 }

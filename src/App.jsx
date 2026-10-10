@@ -1,196 +1,275 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useReducedMotion } from 'motion/react'
 import { DEFAULT_REGION, getRegion, getTheme, getThemes } from './data/index.js'
-import {
-  castVote,
-  fetchResults,
-  hasBeenAskedEase,
-  hasSeenPrimer,
-  hasVoted,
-  markEaseAsked,
-  markPrimerSeen,
-  myVoteIn,
-  submitEase,
-} from './lib/api.js'
+import { castVote, fetchResults, hasVoted, isFirstRun, myVoteIn } from './lib/api.js'
+import { allocate, describeMyVote } from './lib/allocate.js'
+import { relabelForFirstRun } from './lib/firstRun.js'
 import { resolveTheme } from './lib/variant.js'
-import Start from './screens/Start.jsx'
-import Primer from './screens/Primer.jsx'
-import Ballot from './screens/Ballot.jsx'
-import EaseScale from './screens/EaseScale.jsx'
-import Results from './screens/Results.jsx'
+import { THEME_PARAM } from './config.js'
+import BallotBoxIcon from './components/BallotBoxIcon.jsx'
+import StickyBar from './components/StickyBar.jsx'
+import Intro from './sections/Intro.jsx'
+import Ballot from './sections/Ballot.jsx'
+import WinnerTakeAll from './sections/WinnerTakeAll.jsx'
+import Proportional from './sections/Proportional.jsx'
+import HowSeats from './sections/HowSeats.jsx'
+import PartySeats from './sections/PartySeats.jsx'
+import Wrap from './sections/Wrap.jsx'
 
 const REGION = DEFAULT_REGION
 
+/**
+ * The page is one column that grows.
+ *
+ * Each tap of the sticky button reveals the next section underneath the one
+ * being read and scrolls it into view; nothing above is ever removed, so going
+ * back is scrolling up. The order is the argument: vote, see the old system
+ * give your side nothing, see the new one give it a seat, then learn why.
+ */
+const INTRO = 0
+const BALLOT = 1
+const WTA = 2
+const PR = 3
+const HOW = 4
+const PARTY = 5
+const WRAP = 6
+
 export default function App() {
+  const reduced = useReducedMotion()
   const region = getRegion(REGION)
   const themes = getThemes(REGION)
 
-  const [screen, setScreen] = useState('start')
-  const [themeId, setThemeId] = useState(null)
-  const [selection, setSelection] = useState(null)
-  const [voteToken, setVoteToken] = useState(null)
+  // `?theme=hogwarts` picks the election; anything else is the region's own.
+  // Read once: the address bar doesn't change while the page is open.
+  const [themeId] = useState(
+    () =>
+      resolveTheme(window.location.search, themes.map((t) => t.id)) ?? region.sportsTheme.id,
+  )
+  const theme = getTheme(themeId, REGION)
+
+  // One ballot per election per browser. A repeat visitor starts at the results
+  // with their original pick restored.
+  const [returning] = useState(() => hasVoted(themeId))
+  const [selection, setSelection] = useState(() => myVoteIn(themeId))
+  const [stage, setStage] = useState(() => (returning ? WTA : INTRO))
   const [results, setResults] = useState(null)
   const [error, setError] = useState(null)
-  // True from the moment a ballot is submitted until the tally comes back.
-  // Without the ease screen in the way there is nothing else holding the results
-  // screen off, and its prefetch would otherwise race the insert it depends on.
   const [casting, setCasting] = useState(false)
+  const [seenAll, setSeenAll] = useState(false)
+  const [dropping, setDropping] = useState(false)
 
-  const theme = themeId ? getTheme(themeId, REGION) : null
+  // Decided before the vote is stored, so a fresh browser reads as a first run
+  // even once its own ballot has been written. See relabelForFirstRun.
+  const [firstRun] = useState(() => isFirstRun(themeId))
 
-  // Each screen is its own page as far as the reader is concerned.
+  const result = useMemo(() => {
+    if (!results) return null
+    const tallies = firstRun ? relabelForFirstRun(theme, results.tallies, selection) : results.tallies
+    return allocate(theme, tallies)
+  }, [results, firstRun, theme, selection])
+  const mine = useMemo(() => (result ? describeMyVote(result, selection) : null), [result, selection])
+
+  const sectionRefs = useRef({})
+  const scrolledTo = useRef(stage)
+
+  // Each newly revealed section scrolls to the top of the window. Not the
+  // initial one: a repeat visitor landing on the results should start at the
+  // top of the page like anyone else.
   useEffect(() => {
-    window.scrollTo(0, 0)
-  }, [screen])
+    if (stage === scrolledTo.current) return
+    scrolledTo.current = stage
+    const el = sectionRefs.current[stage]
+    if (!el) return
+    const frame = requestAnimationFrame(() =>
+      el.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' }),
+    )
+    return () => cancelAnimationFrame(frame)
+  }, [stage, reduced])
 
-  const openTheme = (id) => {
-    setThemeId(id)
-    setVoteToken(null)
-    setResults(null)
-    setError(null)
-
-    // One ballot per theme per browser. A repeat visitor goes to the results
-    // instead of a second ballot — with their original pick restored, so the
-    // personal payoff still reads correctly however much the election has grown.
-    if (hasVoted(id)) {
-      setSelection(myVoteIn(id))
-      setScreen('results')
-      return
-    }
-
-    setSelection(null)
-    // The instruction screen, on the first ballot only. Both of its lines are on
-    // the ballot too, but there they compete with twenty names and a carousel,
-    // and first-timers were missing them. A second visit doesn't need telling.
-    if (hasSeenPrimer()) {
-      setScreen('ballot')
-      return
-    }
-    markPrimerSeen()
-    setScreen('primer')
-  }
-
-  /**
-   * `?theme=detroit` opens straight onto that election.
-   *
-   * For user testing: both arms have to see the same contest, and a respondent
-   * who picks their own world is comparing four parties they chose against four
-   * somebody else chose. An unknown id falls through to the picker rather than
-   * erroring — a broken link should still be a usable site.
-   *
-   * Once only. In StrictMode the effect runs twice, and the second pass would
-   * find the primer already marked as seen and skip it — so the pinned link
-   * would show a different first screen in dev than in production.
-   */
-  const pinned = useRef(false)
-  useEffect(() => {
-    if (pinned.current) return
-    pinned.current = true
-    const id = resolveTheme(window.location.search, themes.map((t) => t.id))
-    if (id) openTheme(id)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  const goStart = () => {
-    setScreen('start')
-    setThemeId(null)
-    setSelection(null)
-  }
-
-  /**
-   * Record the vote the moment it is cast, not after the ease question. Someone
-   * who bounces off the ease screen has still voted, and their ballot should count.
-   */
   const handleCast = useCallback(async () => {
-    // The ease question is a first-impression measure, so it runs once per
-    // browser. Everyone after that goes straight from the ballot to the results.
-    const ask = !hasBeenAskedEase()
-    if (ask) markEaseAsked()
+    if (!selection || dropping) return
+    setDropping(true)
+    // Let the ballot finish dropping through the slot before the page moves on.
+    await new Promise((r) => setTimeout(r, 340))
     setCasting(true)
-    setScreen(ask ? 'ease' : 'results')
+    setStage(WTA)
     try {
-      // Strictly sequential. Fetching the tally concurrently with the insert lets
-      // the read land first, so the voter's own ballot is missing from their own
-      // results — and the payoff line ("your vote elected X") gets computed
-      // without the vote it is describing. Both requests still happen while the
-      // ease question is on screen, so this costs nothing the reader can feel.
-      const voted = await castVote({
+      // Strictly sequential: fetching the tally alongside the insert lets the
+      // read land first, and the voter's own ballot goes missing from their
+      // own results.
+      await castVote({
         themeId,
         listId: selection.listId,
         candidateId: selection.candidateId,
         regionId: REGION,
       })
-      setVoteToken(voted?.token ?? null)
       setResults(await fetchResults(themeId, REGION))
     } catch (err) {
       console.error(err)
       setError('We could not reach the vote server, so this ballot may not have counted.')
     } finally {
       setCasting(false)
+      setDropping(false)
     }
-  }, [themeId, selection])
+  }, [themeId, selection, dropping])
 
-  const handleEase = useCallback(
-    async (value) => {
-      setScreen('results')
-      if (value == null || !voteToken) return
-      try {
-        await submitEase({ token: voteToken, ease: value })
-      } catch (err) {
-        // A missing ease answer is not worth interrupting anyone over.
-        console.error(err)
-      }
-    },
-    [voteToken],
-  )
-
-  // Covers arriving at the results without having just voted — a repeat visitor
-  // sent straight here by their stored ballot — and a slow network behind the
-  // ease screen. Never while a ballot is in flight: handleCast owns that fetch,
-  // and it has to run after the insert, not alongside it.
+  // A repeat visitor sent straight to the results. Never while a ballot is in
+  // flight: handleCast owns that fetch, and it has to run after the insert.
   useEffect(() => {
-    if (screen !== 'results' || results || !themeId || casting) return
+    if (stage < WTA || results || casting) return
     fetchResults(themeId, REGION)
       .then(setResults)
       .catch(() => setError('We could not load the results.'))
-  }, [screen, results, themeId, casting])
+  }, [stage, results, themeId, casting])
+
+  const nextTheme = themes[(themes.findIndex((t) => t.id === themeId) + 1) % themes.length]
+  const tryAnother = () => {
+    const url = new URL(window.location.href)
+    url.searchParams.set(THEME_PARAM, nextTheme.id)
+    window.location.assign(url)
+  }
+
+  const selectedName = selection
+    ? theme.lists
+        .find((l) => l.id === selection.listId)
+        ?.candidates.find((c) => c.id === selection.candidateId)?.name
+    : null
+  const bar = barFor({
+    stage,
+    result,
+    selection,
+    selectedName,
+    seenAll,
+    dropping,
+    setStage,
+    handleCast,
+    tryAnother,
+  })
+
+  const ref = (i) => (el) => {
+    sectionRefs.current[i] = el
+  }
 
   return (
     /* dvh, not `min-h-full`: a percentage min-height resolves against the
        parent's *height*, which is auto here, so it would collapse and the
-       ballot's sticky bar would float mid-screen. dvh also tracks mobile
-       browser chrome as it hides.
-
-       The reading column is set per screen rather than here, because the ballot
-       is the one screen that earns a wide window — it has four cards to show at
-       once. Prose stays at phone width everywhere else no matter the monitor. */
+       sticky bar would float mid-screen. dvh also tracks mobile browser chrome. */
     <div className="flex min-h-dvh w-full flex-col">
-      {screen === 'start' && <Start region={region} themes={themes} onPick={openTheme} />}
+      <main className="mx-auto w-full max-w-[560px] px-5 pb-10">
+        {stage >= INTRO && stage < WTA && (
+          <div ref={ref(INTRO)}>
+            <Intro theme={theme} />
+          </div>
+        )}
 
-      {screen === 'primer' && theme && (
-        <Primer theme={theme} onDone={() => setScreen('ballot')} />
-      )}
+        {stage >= BALLOT && stage < WTA && (
+          <div ref={ref(BALLOT)} className="section-in scroll-mt-4">
+            <Ballot
+              theme={theme}
+              selection={selection}
+              onSelect={setSelection}
+              onSeenAll={setSeenAll}
+            />
+          </div>
+        )}
 
-      {screen === 'ballot' && theme && (
-        <Ballot
-          theme={theme}
-          selection={selection}
-          onSelect={setSelection}
-          onCast={handleCast}
-          onBack={goStart}
-        />
-      )}
+        {stage >= WTA && (
+          <div ref={ref(WTA)} className="section-in scroll-mt-4">
+            {/* A repeat visitor lands here with no ballot above them, so the
+                page says which election this is and what they chose. */}
+            {returning && selectedName && (
+              <p className="pt-10 text-[17px] text-[var(--ink-soft)]">
+                You already voted in the {theme.name} election, for{' '}
+                <strong className="text-[var(--ink)]">{selectedName}</strong>.
+              </p>
+            )}
+            {result ? (
+              <WinnerTakeAll result={result} mine={mine} myVote={selection} />
+            ) : (
+              <p className="pt-12 text-[18px] text-[var(--ink-soft)]">
+                {error ?? 'Counting the votes…'}
+              </p>
+            )}
+          </div>
+        )}
 
-      {screen === 'ease' && <EaseScale onAnswer={handleEase} />}
+        {stage >= PR && result && (
+          <div ref={ref(PR)} className="section-in scroll-mt-4">
+            <Proportional result={result} mine={mine} myVote={selection} />
+          </div>
+        )}
 
-      {screen === 'results' && theme && (
-        <Results
-          theme={theme}
-          myVote={selection}
-          results={results}
-          error={error}
-          onRestart={goStart}
-        />
-      )}
+        {stage >= HOW && result && (
+          <div ref={ref(HOW)} className="section-in scroll-mt-4">
+            <HowSeats result={result} />
+          </div>
+        )}
+
+        {stage >= PARTY && result && (
+          <div ref={ref(PARTY)} className="section-in scroll-mt-4">
+            <PartySeats result={result} myVote={selection} theme={theme} />
+          </div>
+        )}
+
+        {stage >= WRAP && result && (
+          <div ref={ref(WRAP)} className="section-in scroll-mt-4">
+            <Wrap result={result} />
+          </div>
+        )}
+
+      </main>
+
+      <StickyBar note={bar.note} disabled={bar.disabled} onClick={bar.onClick}>
+        {bar.icon}
+        {bar.label}
+      </StickyBar>
     </div>
   )
+}
+
+/**
+ * What the one button says and does at each stage. Kept together so the whole
+ * path reads in one place: Start → Cast → Next → Next → Next → Next → Again.
+ */
+function barFor({
+  stage,
+  result,
+  selection,
+  selectedName,
+  seenAll,
+  dropping,
+  setStage,
+  handleCast,
+  tryAnother,
+}) {
+  const next = () => setStage(stage + 1)
+  switch (stage) {
+    case INTRO:
+      return { label: 'Start', onClick: next }
+    case BALLOT: {
+      const ready = Boolean(selection) && seenAll
+      // The instruction lives in the note line, in ink, where it can be
+      // read; a greyed-out button is the one place text is hardest to see.
+      // Once a name is chosen the button says it, so the note says nothing.
+      return {
+        note: !seenAll
+          ? 'Scroll to see every party'
+          : selectedName
+            ? null
+            : 'Tap a name to choose',
+        disabled: !ready || dropping,
+        onClick: handleCast,
+        icon: <BallotBoxIcon dropping={dropping} className="size-7" />,
+        label: dropping
+          ? 'Casting…'
+          : selectedName && seenAll
+            ? `Cast my vote for ${selectedName}`
+            : 'Cast my vote',
+      }
+    }
+    case WRAP:
+      return { label: 'Try another election', onClick: tryAnother }
+    default:
+      return { label: 'Next', disabled: !result, onClick: next }
+  }
 }

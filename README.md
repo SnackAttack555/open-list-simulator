@@ -4,32 +4,39 @@ A phone-first web app that lets someone cast a ballot in an open-list proportion
 election — for Hogwarts houses, Detroit sports legends, animation studios — and only
 then shows them how their vote was counted.
 
-The design constraint is **minimum explanation**. No tutorial and nothing to read before
-you start: the ballot teaches by being obviously easy, and the results teach by showing
-that the voter's side got represented even though it didn't win everything.
+Version 2.0 is one scrolling page, read like an article. A sticky Next reveals the next
+section under the one being read and nothing above is ever removed, so going back is
+scrolling up. The order is the argument:
 
-The one exception is deliberate. Before their first ballot — once per browser, for two
-seconds, auto-advancing — people get the two sentences they were demonstrably missing:
-that they get one mark, and that there are more parties off the right edge. Both lines
-are on the ballot too, so that screen is emphasis rather than the only place they live.
+1. **Intro** — three sentences and Start.
+2. **Ballot** — every party in one column. The button stays grey until the last party has
+   been scrolled into view and a name is marked, then reads "Cast my vote for Barry Sanders".
+3. **Winner takes all** — the party with the most votes takes all five seats; the visitor's
+   party, which had votes, has nobody.
+4. **Proportional representation** — the same votes, and one of the five is from their party.
+5. **How did that happen?** — every vote as a dot, full rows of one seat's worth checked,
+   leftovers to the closest. Plays through on its own; the sentences under it say the same.
+6. **Who gets the party's seat?** — the party's most-voted candidate, shown by re-sorting
+   the ballot order.
+7. **The difference** — the two percentages, and "Try another election".
 
-The ballot has two layouts, picked by CSS rather than by measuring the window so there
-is no flash of the wrong one. Narrow screens get a scroll-snap carousel with a chip row
-naming every party; at `lg` and up every card is on screen at once and both the chips and
-the swipe hint disappear, because a jump link to a card you are already looking at is
-noise. `docs/` holds the storyboards behind the results animation:
-`anim-storyboard-winners-first.html` is the built flow, `anim-storyboard-bars.html` is
-the same flow drawn with bars instead of dots (the two differ in three frames only, so
-they can be tested against each other), `anim-storyboard-dhondt.html` compares largest
-remainder with D'Hondt, and `anim-storyboards.html` is the original exploration, kept
-for the record and marked superseded.
+There is no world picker. `?theme=hogwarts` opens that election; missing or unknown means
+the region's own sports election (Detroit for Michigan). "Try another election" cycles to
+the next world.
 
-Both graphics are live, picked by URL: `?viz=bars` draws Act 1 of the results as bars,
-anything else draws it as dots, and `?theme=detroit` skips the world picker so two arms of
-a user test vote in the same contest. **`docs/ab-test-dots-vs-bars.md` is the hand-off** —
-the links, and the things that would invalidate the study. The variant never reaches
-`buildModel()`, so the two arms are guaranteed to be the same story with one graphic
-swapped rather than two flows that have to be kept in step by hand.
+**The first run is arranged** (`src/lib/firstRun.js`). The page only works if winner-take-all
+goes badly for the visitor, and one vote in eight hundred can't make that happen. So on a
+browser's first election, if the visitor's party has the most votes, its total is swapped
+with the runner-up's — each party keeps its own candidates in their own proportions, at the
+other party's size. No votes are invented, nothing else is touched, and every later election
+is shown exactly as counted. This is deliberately the smallest arrangement that makes the
+contrast certain; it is not labelled on the page.
+
+The seat picture is dots only in 2.0. `docs/anim-storyboard-bars.html` and
+`docs/ab-test-dots-vs-bars.md` describe the bars arm that 1.x served from `?viz=bars`; it
+is parked, with its parsing and tests kept in `src/lib/variant.js`, and comes back for user
+testing in a later version. The other storyboards in `docs/` are the record of how the
+dots animation was designed.
 
 ## Running it
 
@@ -51,7 +58,7 @@ npm run preview:full # build, then serve the real Worker + D1 locally
 ```
 
 ```bash
-npm test             # 33 assertions against the seat-allocation maths
+npm test             # seat-allocation maths, first-run relabel, URL parsing
 npm run lint
 ```
 
@@ -149,15 +156,8 @@ credential ships in the page.
   results with their original pick restored, so the personal payoff still reads correctly
   however much the election has grown. The local record is written only after the server
   answers — writing it first would burn someone's vote on a dropped request.
-- The ease question is asked **once per browser, ever** — not once per theme. It measures
-  a first impression of an unfamiliar ballot, and there is only one of those per person.
-  The flag is set when the question is shown rather than when it is answered, so skipping
-  counts as having been asked. When it is skipped the app goes straight from the ballot to
-  the results, which is why `App.jsx` tracks `casting`: without the ease screen standing
-  between the two, the results prefetch would otherwise race the insert it depends on and
-  the voter's own ballot would be missing from their own results.
-- Ease answers attach via an opaque per-vote token and only fill a `NULL`, so the one
-  statistic this app exists to produce can't be stuffed or rewritten.
+- The `ease` column and `POST /api/ease` remain in the Worker. Nothing in 2.0 calls them;
+  the ease question was dropped from the page.
 
 ## Deploying
 

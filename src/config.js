@@ -12,35 +12,6 @@ export const QUOTA_PCT = Math.round(100 / SEATS)
 export const QUOTA_SENTENCE = `${QUOTA_PCT}% of the vote wins 1 spot, ${QUOTA_PCT * 2}% wins 2, and so on.`
 
 /**
- * How long the pre-ballot instruction screen stays up, in milliseconds.
- *
- * Long enough to read two short lines without feeling stalled. Both lines also
- * appear on the ballot itself, so this screen is emphasis rather than the only
- * place the information lives — and a tap skips it.
- */
-export const PRIMER_MS = 2200
-
-/**
- * localStorage key recording that this browser has seen the pre-ballot
- * instruction.
- *
- * Shown on the first ballot only. It exists to teach the two things a
- * first-timer misses; by the second election the reader already knows them, and
- * six of these on the way through six themes is the same nagging the ease
- * question was cut back for.
- */
-export const PRIMER_SEEN_KEY = 'ols.primer-seen.v1'
-
-/** 5-point ease scale, stored as 1..5. Order matters: index 0 is "easiest". */
-export const EASE_OPTIONS = [
-  { value: 1, label: 'Very easy', emoji: '😃' },
-  { value: 2, label: 'Easy', emoji: '🙂' },
-  { value: 3, label: 'In between', emoji: '😐' },
-  { value: 4, label: 'Confusing', emoji: '🤔' },
-  { value: 5, label: 'Very confusing', emoji: '😕' },
-]
-
-/**
  * localStorage key holding this browser's ballots: { [themeId]: {listId, candidateId} }.
  *
  * The choice is stored, not just the fact of voting, so someone returning a week
@@ -49,20 +20,12 @@ export const EASE_OPTIONS = [
  */
 export const VOTED_STORAGE_KEY = 'ols.ballots.v2'
 
-/**
- * localStorage key recording that this browser has already been asked how the
- * ballot felt.
- *
- * Asked once ever, not once per election. The question is measuring a first
- * impression of an unfamiliar ballot, and there is only one of those per person —
- * by the second election the answer is about the app's novelty wearing off, which
- * is not the statistic this exists to produce. Re-asking also reads as nagging to
- * exactly the people engaged enough to try a second theme.
- */
-export const EASE_ASKED_KEY = 'ols.ease-asked.v1'
-
 /* ------------------------------------------------------------------ *
- * A/B test: how Act 1 of the results story is drawn
+ * A/B test: how the seat-allocation picture is drawn
+ *
+ * Parked in 2.0 — the page draws dots only and `?viz=` is read by nothing.
+ * Kept, with `src/lib/variant.js` and its tests, because the study comes back
+ * in a later version and the parsing is the part worth not rewriting.
  *
  * A survey firm fields both versions to its own panel with its own
  * measurement instrument, so the app's whole job is to serve one visual or
@@ -77,7 +40,8 @@ export const EASE_ASKED_KEY = 'ols.ease-asked.v1'
 /** `?viz=bars` — which Act 1 graphic to draw. */
 export const VIZ_PARAM = 'viz'
 
-/** `?theme=detroit` — skip the picker, so both arms see the same contest. */
+/** `?theme=hogwarts` — which election to open. Unknown or missing means the
+ *  region's own sports election, which for Michigan is Detroit. */
 export const THEME_PARAM = 'theme'
 
 export const VIZ_VARIANTS = ['dots', 'bars']

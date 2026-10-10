@@ -1,5 +1,11 @@
 # Serving dots vs bars for user testing
 
+> **Parked in 2.0.** The page draws the seat picture as dots only, and `?viz=` is read by
+> nothing. The study comes back for user testing in a later version: the parsing in
+> `src/lib/variant.js` and its tests are kept for that, and this document describes how the
+> 1.x arms behaved so the next round starts from it rather than from scratch.
+
+
 The results explanation draws Act 1 — votes by party, full groups, leftover seats — either
 as **dots** (one dot ≈ 10 votes, countable) or as **bars** (each party's share of a
 0–100% track). Which one teaches better is an open question, so the app can serve either

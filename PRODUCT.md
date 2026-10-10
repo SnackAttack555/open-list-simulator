@@ -16,7 +16,7 @@ Secondary audiences: respondents in a user-testing panel (the dots-vs-bars study
 
 People cast a ballot in a five-seat open-list election in a world they already care about, and only afterward see how their vote was counted. Success means two things. The visitor stops for a moment and thinks "that wasn't so hard" about a ballot type they would have assumed was complicated. Then the results show them their side got represented even though it didn't win everything.
 
-The ease question after the ballot is there to prompt that moment of reflection. It isn't mainly a statistic to collect or cite. (A comment in `src/screens/EaseScale.jsx` frames it as "a number worth citing"; the user's stated intent is the reflection, and the code comment is the older framing.)
+The ease question that used to follow the ballot was dropped in 2.0. The reflection it prompted now comes from the contrast the page draws: the old system gives the visitor nothing, the new one gives their side a seat.
 
 ## Positioning
 
@@ -25,8 +25,10 @@ The ballot teaches by being obviously easy, and the results teach by showing the
 ## Operating Context
 
 - Phone-first, one sitting, arriving from a link with no context.
-- Flow: pick a world → two-second, once-per-browser primer (one mark; more parties off the right edge) → ballot → optional ease question → results story → try another election.
-- Each world starts with ~800 simulated voters so the first real visitor doesn't see a one-vote election. The results say plainly how many voters are simulated.
+- Flow (2.0): one scrolling page. Intro → ballot → winner-take-all result (their party gets nothing) → proportional result (their party gets a seat) → how the seats were decided → who filled their party's seat → the two percentages. A sticky Next reveals each section below the last; nothing above is ever removed. "Try another election" cycles to the next world.
+- `?theme=` picks the world; missing or unknown means the region's own sports election (Detroit). There is no picker.
+- First run per browser: if the visitor's party has the most votes, its total is swapped with the runner-up's (`src/lib/firstRun.js`) so the winner-take-all section always goes badly for them. No votes are invented and every later election is shown as counted.
+- Each world starts with ~800 simulated voters so the first real visitor doesn't see a one-vote election. The page says once, at the end, that most of the votes are simulated.
 - v1 ships a Michigan edition; the structure allows other state editions.
 
 ## Capabilities and Constraints
@@ -35,8 +37,8 @@ The ballot teaches by being obviously easy, and the results teach by showing the
 - Four parties per world, five candidates per party (a content decision). Parties are displayed as "<Name> party".
 - Ties are broken by a deterministic draw, and the UI calls it that: "drawn from a hat 🎩".
 - One ballot per world per browser. A repeat visitor goes straight to their results with their original pick restored.
-- Results Act 1 is drawn as dots (default) or bars (`?viz=bars`). Which teaches better is an open question under test. Copy and step structure must stay identical between the two arms.
-- Ballot layout: a scroll-snap carousel with a chip row on narrow screens; all cards visible from `lg` up.
+- The seat picture is dots only in 2.0. The bars arm (`?viz=bars`) is parked, parsing kept, and comes back for user testing in a later version.
+- Ballot layout: every party stacked in one column; the cast button stays grey until the last party has been scrolled into view and a candidate is marked.
 - Stack is established: React 19, Vite, Tailwind v4, Motion, served by a Cloudflare Worker with D1. Pushing to `main` deploys.
 - Privacy: raw IPs are never stored (salted hash only), and no database credential ships to the browser.
 - Open: custom domain (`docs/custom-domain.md`).

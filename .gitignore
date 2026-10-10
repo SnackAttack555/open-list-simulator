@@ -28,3 +28,8 @@ seed.sql
 
 # Wrangler local state (local D1 lives here)
 .wrangler/
+
+# Impeccable review captures are regenerated every run
+.impeccable/review/
+.impeccable/build/
+.impeccable/mocks/
