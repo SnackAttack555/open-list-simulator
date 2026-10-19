@@ -1,0 +1,187 @@
+/* v4: the scroll story. One picture stuck to the screen, text cards over it. */
+
+.story {
+  position: relative;
+  margin-top: var(--sp-6);
+}
+
+/* The picture: pinned to the top of the screen for the length of the story
+   (position: fixed while the story is on screen; parked at its top before and
+   its bottom after, so it scrolls in and out with the page). Scenes stack in
+   the same cell and crossfade. */
+.story {
+  min-height: 100dvh;
+}
+.graphic {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100dvh;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  padding-top: var(--sp-4);
+  pointer-events: none;
+}
+.story.fixed .graphic {
+  position: fixed;
+  left: var(--gl);
+  width: var(--gw);
+}
+.story.after .graphic {
+  top: auto;
+  bottom: 0;
+}
+.scene {
+  grid-area: 1 / 1;
+  min-width: 0;
+  display: grid;
+  align-content: start; /* scenes share one cell; the shorter ones must not stretch */
+  gap: var(--sp-4);
+  opacity: 0;
+  transition: opacity 0.45s var(--ease);
+}
+.scene.on {
+  opacity: 1;
+}
+.scene > *,
+.scene .figure > * {
+  min-width: 0;
+  max-width: 100%;
+}
+.scene .cap {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--ink-2);
+}
+.scene .cap + .figure {
+  margin-top: calc(-1 * var(--sp-2));
+}
+
+/* The cards. Each rests with its top on a line just under the pinned picture
+   (44dvh: the picture is capped at 30dvh plus its key), so no card, however
+   tall, covers the picture. A card goes live as its top enters the bottom
+   quarter of the screen (App.jsx, which also parks a deep link on the same
+   line), and the 80dvh between one card's foot and the next card's top is
+   what it takes for the card before to have left the screen by then. */
+.steps {
+  position: relative;
+  z-index: 1;
+}
+.step {
+  padding-top: 44dvh;
+  padding-bottom: 36dvh;
+}
+/* The last card stops on its resting line: the page ends with it, so it can't
+   be scrolled up over the picture. A card too tall for the space under the
+   picture (a short phone) grows the step instead, so its button stays reachable. */
+.step:last-child {
+  box-sizing: border-box;
+  min-height: 100dvh;
+  padding-bottom: 0;
+}
+.card {
+  display: grid;
+  gap: var(--sp-3);
+  padding: var(--sp-4);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  /* No backdrop blur: Chromium stops painting the stuck picture behind a
+     blurred card, so the card is simply near-opaque paper. */
+  background: color-mix(in oklch, var(--card) 96%, transparent);
+  box-shadow:
+    0 1px 0 var(--line-2),
+    0 12px 28px -18px oklch(0.3 0.03 60 / 0.55);
+}
+.card h2 {
+  font: 400 1.375rem / 1.2 var(--display);
+  text-wrap: balance;
+}
+.card p {
+  max-width: 38ch;
+}
+.card .plist {
+  margin-block: var(--sp-1);
+}
+.card .plist-row {
+  min-height: 38px;
+}
+
+/* The nudge under the receipt once the vote is cast. */
+.cue {
+  margin-top: var(--sp-5);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  color: var(--ink-2);
+  font-size: 0.9375rem;
+}
+.cue svg {
+  animation: nudge 1.6s var(--ease) infinite;
+}
+@keyframes nudge {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(4px);
+  }
+}
+
+/* ---------- the one picture ---------- */
+
+.crowd {
+  display: block;
+  width: 100%;
+  height: auto;
+  /* On a tall, wide screen the picture would otherwise fill half the height
+     and run under the cards' resting line; phones are untouched. */
+  max-height: 30dvh;
+  overflow: visible;
+}
+.crowd .box,
+.crowd .fences line {
+  fill: none;
+  stroke: var(--ink-3);
+  stroke-width: 1.5;
+}
+.crowd .box.mine {
+  stroke: var(--ink);
+  stroke-width: 2;
+}
+.crowd .persons circle,
+.crowd .clusters circle {
+  stroke-width: 2;
+}
+.crowd .ring {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 2;
+}
+.crowd .link {
+  fill: none;
+  stroke: var(--ink-2);
+  stroke-width: 1.75;
+  stroke-linecap: round;
+}
+.crowd .seat {
+  fill: var(--grey);
+}
+.crowd .rings rect {
+  fill: none;
+  stroke: var(--ink-2);
+  stroke-width: 2;
+}
+.legend .dot.five {
+  background: var(--ink-3);
+}
+.card .btn {
+  margin-top: var(--sp-2);
+}
+
+/* v4 has no sticky Next: the ballot's bar goes once the vote is cast. */
+.scrolly .bar {
+  position: sticky;
+}

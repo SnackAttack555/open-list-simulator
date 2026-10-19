@@ -1,0 +1,898 @@
+<!doctype html>
+<!--
+  Candidate C: THE MAP
+
+  Concept (3 sentences)
+  Five neighbouring districts are drawn as tiles on one small abstract map, each with its
+  twenty voters as dots and the one Cat it elected standing on the tile; Cats are bright and
+  everyone else is washed out, because nobody of theirs was elected anywhere. The lines
+  between the tiles dissolve, the outline firms into one bigger district, the dots migrate so
+  each colour settles into its own neighbourhood (orange on the left, then blue, gold, teal),
+  and the five Cats line up along the top edge. The question "What if everyone's voice was
+  represented?" appears, the five Cats become plain grey seats, and the seats become two Cats,
+  a Dog, a Bird and a Fish, each sliding over its own colour while that neighbourhood comes up
+  to full strength: everyone now has someone of their colour.
+
+  Beats and timings (every curve is an exponential ease-out)
+  Frame 1 "five districts", 1.2 s, plays on load / Replay from a pre-state of 100 full dots:
+    0.10 to 0.60 s  the Cat each district elected pops onto its tile (scale 0.4 to 1, fade in)
+    0.55 to 1.20 s  every dot that is not a Cat fades to 45 percent of its colour
+    End state: five tiles, 20 dots each, Cats bright, others washed out, five Cats, your
+    ringed blue dot in the middle (bottom-centre) tile.
+  Frame 2 "one bigger district", 1.7 s:
+    0.00 to 0.60 s  the four inside borders fade out
+    0.15 to 1.60 s  the 100 dots migrate to their colour's neighbourhood in the big district
+    0.30 to 1.20 s  the outline firms from ink-3 1.5px to ink 2.5px
+    0.30 to 1.50 s  the five Cats gather into a row along the top edge
+    End state: one outlined district, four colour regions (37 / 27 / 22 / 14), five Cats on
+    top, others still washed out, your ringed dot in the middle of the blue region.
+  Frame 3 "what if everyone's voice was represented?", 1.9 s:
+    0.00 to 0.50 s  the caption fades up under the map
+    0.50 to 0.95 s  the five Cats cross-fade into five plain grey squares
+    1.10 to 1.55 s  the squares cross-fade into 2 Cats, 1 Dog, 1 Bird, 1 Fish ...
+    1.05 to 1.80 s  ... while each one slides to stand over its own colour region
+    1.20 to 1.90 s  every region comes up to full strength
+    End state: four full-strength regions, each with its own animal(s) standing over it,
+    the caption, the legend reading "you" with your dot now full blue.
+  Forward total 4.8 s of motion; Replay adds a 0.5 s hold between frames (5.8 s). Playing
+  backwards mirrors each frame's windows (so 3 to 2 first dims the regions and walks the
+  animals back through squares to Cats, then the caption goes).
+
+  Porting into src/components/Districts.jsx
+  - Props: `election` (from src/election.js) and `phase` (0, 1, 2). Build the script's two
+    tables from it:
+      PARTIES = election.standings.map(p => ({ id, icon, color, text, seats: p.seats }))
+        (standings order = region order left to right, biggest party first)
+      DISTRICTS = one fixed table of per-district splits per finishing place, e.g. the one at
+        the top of the script, since the hands are always 37 / 27 / 22 / 14 and only move
+        between parties; columns follow `standings` order, so no dealer is needed.
+      ME = { district: 2, party: index of election.me.party in standings }
+    The per-district winner is derived (biggest group in each district) so the Cats are not
+    hard-coded; the dim rule is "no one of your party among the five".
+  - The engine is one closure: `setPhase(n)` plans a list of legs from the current flight
+    position to `n` (forwards or backwards, chaining across frames), captures the currently
+    rendered state vector as the start, and tweens to `stateFor(n)` with per-track windows.
+    In React: build the dot and rep elements once in JSX (positions from stateFor(0)), hold
+    the state vector in a ref, and call setPhase from a `useEffect` on `phase`; on mount call
+    setPhase(0) from the pre-state (phase -1) so the Cats pop in like VoteDots' icons. It
+    checks prefers-reduced-motion at call time and jumps to the end state.
+  - `settle(phase)` for sections.jsx: LEGS[phase].dur (1200 / 1700 / 1900 ms) so a `.part.late`
+    line can wait for the picture.
+  - Icons: <PartyIcon> as nested svgs inside the <g class="rep">, three per rep (the WTA
+    animal, a grey rect, the PR animal); the engine only writes opacity and transform.
+  - CSS it needs from styles.css: --paper-2, --ink, --ink-2, --ink-3, --grey, --c, --ease,
+    .figure, .legend, .dot, .dot.me. New rules (about 25 lines, under "the map" below):
+    .map, .map-land, .map-borders, .map-outline(.firm), .rep .sq, .cap, and the legend
+    dot's `--mix` colour-mix (so the "you" key can show the dim state like the picture).
+
+  Things the owner should know
+  - Dimming is fill-opacity 0.45 of the party colour over the paper-2 land, so every colour
+    stays identifiable; gold is the faintest. The legend's "you" dot uses the same mix.
+  - Frame 2's regions come from filling the 100 cells of the blob column by column (biggest
+    party first), so borders between colours run top to bottom with a one-dot stair, like
+    district lines; the reader's dot is placed at the cell nearest the blue region's centre.
+  - The five Cats become the five PR seats left to right (Cat, Cat, Dog, Bird, Fish) so no
+    animal crosses another on its way to its region; a different deal keeps that property
+    because regions and seats both follow standings order.
+  - Assumes seats sum to the number of districts (5) and every district sums to 20.
+  - No words inside the picture; the only text is the caption and the legend. The Frame 1 /
+    2 / 3 and Replay buttons are review-only and animate (call `setPhase(n, true)` to jump).
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>One bigger district (map, three frames)</title>
+    <meta name="theme-color" content="#f8f5ef" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Atkinson+Hyperlegible+Next:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* ---------- tokens, copied from src/styles.css ---------- */
+      :root {
+        --paper: oklch(0.977 0.012 85);
+        --paper-2: oklch(0.953 0.016 85);
+        --card: oklch(0.995 0.006 85);
+        --ink: oklch(0.25 0.025 55);
+        --ink-2: oklch(0.47 0.022 55);
+        --ink-3: oklch(0.64 0.016 55);
+        --line: oklch(0.87 0.016 80);
+        --line-2: oklch(0.925 0.012 80);
+        --slot: oklch(0.915 0.01 80);
+        --grey: oklch(0.83 0.008 80);
+        --focus: oklch(0.55 0.15 262);
+
+        --sp-1: 4px;
+        --sp-2: 8px;
+        --sp-3: 12px;
+        --sp-4: 16px;
+        --sp-5: 24px;
+        --sp-6: 32px;
+        --sp-7: 48px;
+
+        --display: 'Young Serif', 'Iowan Old Style', Georgia, serif;
+        --body: 'Atkinson Hyperlegible Next', 'Atkinson Hyperlegible', system-ui, sans-serif;
+
+        --ease: cubic-bezier(0.22, 1, 0.36, 1);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        -webkit-text-size-adjust: 100%;
+        background: var(--paper);
+      }
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font: 400 1.0625rem / 1.5 var(--body);
+        overflow-x: hidden;
+      }
+      h2,
+      p,
+      figure {
+        margin: 0;
+      }
+      button {
+        font: inherit;
+        color: inherit;
+      }
+
+      /* ---------- the page column, as in the app ---------- */
+      .page {
+        width: 100%;
+        max-width: 440px;
+        min-height: 100dvh;
+        margin: 0 auto;
+        padding: var(--sp-6) var(--sp-4) var(--sp-7);
+        display: flex;
+        flex-direction: column;
+      }
+      @media (min-width: 480px) {
+        .page {
+          padding-top: var(--sp-7);
+        }
+      }
+      .sec {
+        display: grid;
+        align-content: start;
+        gap: var(--sp-4);
+      }
+      .sec h2 {
+        font: 400 1.5rem / 1.2 var(--display);
+        text-wrap: balance;
+      }
+      .sec p {
+        max-width: 38ch;
+      }
+
+      /* ---------- shared bits from styles.css ---------- */
+      .figure {
+        display: grid;
+        gap: var(--sp-2);
+      }
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--sp-1) var(--sp-4);
+        justify-content: flex-end;
+        font-size: 0.8125rem;
+        color: var(--ink-2);
+      }
+      .legend span {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--sp-2);
+      }
+      .legend .dot {
+        width: 11px;
+      }
+      .dot {
+        display: block;
+        aspect-ratio: 1;
+        border-radius: 50%;
+        /* --mix is the dot's strength: 45% when no one of its party is elected, 100% when
+           someone is; the same rule the picture's dots follow. Mixed in srgb so it matches
+           the picture's fill-opacity (an oklch mix drags the hue towards the paper's). */
+        background: color-mix(in srgb, var(--c) var(--mix, 100%), var(--paper));
+      }
+      .dot.me {
+        position: relative;
+        z-index: 1;
+        outline: 2px solid var(--ink);
+        outline-offset: 1.5px;
+      }
+
+      /* ---------- the map ---------- */
+      .map {
+        display: block;
+        width: 100%;
+        height: auto;
+        margin-block: var(--sp-1);
+        overflow: visible;
+      }
+      /* the land: one tinted sheet; the districts are only lines drawn on it */
+      .map-land {
+        fill: var(--paper-2);
+      }
+      .map-borders path,
+      .map-outline {
+        fill: none;
+        stroke: var(--ink-3);
+        stroke-width: 1.5;
+        stroke-linecap: round;
+      }
+      /* the firm outline of the one bigger district, faded in over the thin one */
+      .map-outline.firm {
+        stroke: var(--ink);
+        stroke-width: 2.5;
+      }
+      .map-me {
+        fill: none;
+        stroke: var(--ink);
+        stroke-width: 2;
+      }
+      /* a lawmaker: the animal that won, the plain seat it becomes, the animal the seat becomes */
+      .rep .sq {
+        fill: var(--grey);
+      }
+
+      /* the question, part of the figure; it keeps its line so the legend never jumps */
+      .cap {
+        min-height: 1.5em;
+        font-size: 0.9375rem;
+        line-height: 1.5;
+        color: var(--ink-2);
+        opacity: 0;
+        transform: translateY(6px);
+      }
+
+      /* ---------- review only ---------- */
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--sp-2) var(--sp-4);
+        margin-top: var(--sp-5);
+      }
+      .controls button {
+        appearance: none;
+        padding: 0;
+        border: 0;
+        background: none;
+        color: var(--ink-2);
+        font-size: 0.9375rem;
+        text-decoration: underline;
+        text-underline-offset: 3px;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .controls button[aria-pressed='true'] {
+        color: var(--ink);
+        font-weight: 700;
+      }
+      .controls button:focus-visible {
+        outline: 3px solid var(--focus);
+        outline-offset: 2px;
+        border-radius: 4px;
+      }
+      .controls .replay {
+        margin-left: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="sec">
+        <h2>One bigger district.</h2>
+        <p>
+          Now imagine your neighborhood district is combined with other nearby districts. Just
+          like you have 2 U.S. senators, you'd have 5 state representatives and each will
+          represent you all.
+        </p>
+
+        <figure
+          class="figure"
+          id="figure"
+          aria-label="A map in three frames. First, five small districts of twenty voters each; in every one the Cats are the biggest group but under half, and every district elected a Cat, so everyone who is not a Cat is washed out, including your blue dot in the middle district. Second, the borders between the districts go, the voters regroup into one bigger district with a neighbourhood for each party, and the five Cats line up along the top. Third, the question what if everyone's voice was represented: the five Cats become five empty seats, and the seats become two Cats, a Dog, a Bird and a Fish, each standing over its own neighbourhood, and every voter is back at full strength because everyone now has someone of their colour."
+        >
+          <svg class="map" id="map" viewBox="0 0 340 182" aria-hidden="true" focusable="false">
+            <defs>
+              <!-- Lucide icons, stroke 2.25 at 24px like PartyIcon -->
+              <symbol
+                id="i-cat"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.25"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path
+                  d="M12 5c.67 0 1.35.09 2 .26 1.78-2 5.03-2.84 6.42-2.26 1.4.58-.42 7-.42 7 .57 1.07 1 2.24 1 3.44C21 17.9 16.97 21 12 21s-9-3-9-7.56c0-1.25.5-2.4 1-3.44 0 0-1.89-6.42-.5-7 1.39-.58 4.72.23 6.5 2.23A9.04 9.04 0 0 1 12 5Z"
+                />
+                <path d="M8 14v.5" />
+                <path d="M16 14v.5" />
+                <path d="M11.25 16.25h1.5L12 17l-.75-.75Z" />
+              </symbol>
+              <symbol
+                id="i-dog"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.25"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M11.25 16.25h1.5L12 17z" />
+                <path d="M16 14v.5" />
+                <path
+                  d="M4.42 11.247A13.152 13.152 0 0 0 4 14.556C4 18.728 7.582 21 12 21s8-2.272 8-6.444a11.702 11.702 0 0 0-.493-3.309"
+                />
+                <path d="M8 14v.5" />
+                <path
+                  d="M8.5 8.5c-.384 1.05-1.083 2.028-2.344 2.5-1.931.722-3.576-.297-3.656-1-.113-.994 1.177-6.53 4-7 1.923-.321 3.651.845 3.651 2.235A7.497 7.497 0 0 1 14 5.277c0-1.39 1.844-2.598 3.767-2.277 2.823.47 4.113 6.006 4 7-.08.703-1.725 1.722-3.656 1-1.261-.472-1.855-1.45-2.239-2.5"
+                />
+              </symbol>
+              <symbol
+                id="i-bird"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.25"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M16 7h.01" />
+                <path d="M3.4 18H12a8 8 0 0 0 8-8V7a4 4 0 0 0-7.28-2.3L2 20" />
+                <path d="m20 7 2 .5-2 .5" />
+                <path d="M10 18v3" />
+                <path d="M14 17.75V21" />
+                <path d="M7 18a6 6 0 0 0 3.84-10.61" />
+              </symbol>
+              <symbol
+                id="i-fish"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.25"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path
+                  d="M6.5 12c.94-3.46 4.94-6 8.5-6 3.56 0 6.06 2.54 7 6-.94 3.47-3.44 6-7 6s-7.56-2.53-8.5-6Z"
+                />
+                <path d="M18 12v.5" />
+                <path d="M16 17.93a9.77 9.77 0 0 1 0-11.86" />
+                <path
+                  d="M7 10.67C7 8 5.58 5.97 2.73 5.5c-1 1.5-1 5 .23 6.5-1.24 1.5-1.24 5-.23 6.5C5.58 18.03 7 16 7 13.33"
+                />
+                <path d="M10.46 7.26C10.2 5.88 9.17 4.24 8 3h5.8a2 2 0 0 1 1.98 1.67l.23 1.4" />
+                <path d="m16.01 17.93-.23 1.4A2 2 0 0 1 13.8 21H9.5a5.96 5.96 0 0 0 1.49-3.98" />
+              </symbol>
+            </defs>
+
+            <!-- the land: 328 x 170, two districts over three -->
+            <rect class="map-land" x="6" y="6" width="328" height="170" rx="14" />
+
+            <!-- the borders between the five small districts (fade out in frame 2) -->
+            <g class="map-borders" id="borders">
+              <path d="M6 91 H334" />
+              <path d="M170 6 V91" />
+              <path d="M115.33 91 V176" />
+              <path d="M224.67 91 V176" />
+            </g>
+
+            <!-- the edge of the whole area: thin always, and a firm one that fades in -->
+            <rect class="map-outline" x="6" y="6" width="328" height="170" rx="14" />
+            <rect
+              class="map-outline firm"
+              id="outline"
+              x="6"
+              y="6"
+              width="328"
+              height="170"
+              rx="14"
+              opacity="0"
+            />
+
+            <!-- the 100 voters, then you on top, then the five lawmakers: built by the script -->
+            <g id="dots"></g>
+            <g id="me"></g>
+            <g id="reps"></g>
+          </svg>
+
+          <p class="cap" id="cap" aria-hidden="true">What if everyone's voice was represented?</p>
+
+          <p class="legend" id="legend">
+            <span id="key-dim"><i class="dot" id="key-dim-dot" aria-hidden="true"></i> no one speaks for them</span>
+            <span><i class="dot me" id="key-me" aria-hidden="true"></i> you</span>
+          </p>
+        </figure>
+
+        <p class="controls" id="controls">
+          <button type="button" data-phase="0" aria-pressed="false">Frame 1</button>
+          <button type="button" data-phase="1" aria-pressed="false">Frame 2</button>
+          <button type="button" data-phase="2" aria-pressed="false">Frame 3</button>
+          <button type="button" class="replay" id="replay">Replay</button>
+        </p>
+      </section>
+    </main>
+
+    <script>
+      ;(function () {
+        'use strict'
+
+        // ---------- data ----------
+        // Per district (cats, dogs, birds, fish): every district sums to 20, totals 37/27/22/14.
+        var DISTRICTS = [
+          [8, 5, 4, 3],
+          [7, 6, 4, 3],
+          [8, 5, 5, 2],
+          [7, 6, 4, 3],
+          [7, 5, 5, 3],
+        ]
+        // In standings order; `seats` is the proportional result (2/1/1/1).
+        var PARTIES = [
+          { id: 'cats', icon: 'cat', color: 'oklch(0.63 0.18 45)', text: 'oklch(0.5 0.17 45)', seats: 2 },
+          { id: 'dogs', icon: 'dog', color: 'oklch(0.5 0.16 262)', text: 'oklch(0.44 0.16 262)', seats: 1 },
+          { id: 'birds', icon: 'bird', color: 'oklch(0.7 0.15 85)', text: 'oklch(0.5 0.13 85)', seats: 1 },
+          { id: 'fish', icon: 'fish', color: 'oklch(0.56 0.12 185)', text: 'oklch(0.45 0.11 185)', seats: 1 },
+        ]
+        // The reader: a Dog in the middle (bottom-centre) district.
+        var ME = { district: 2, party: 1 }
+
+        // ---------- geometry, SVG user units (about 1:1 with pixels on a phone) ----------
+        var R = 5.5 // dot radius
+        var DIM = 0.45 // fill-opacity of a dot whose party has no one
+        var ICON = 24
+        var GAP = 8 // between a tile's Cat and its dots
+        var PITCH0 = 14 // dot pitch inside a tile
+        var PITCH1 = 17 // dot pitch in the one bigger district
+        // Five tiles, two over three, on the 328 x 170 land; each tile holds its Cat beside a
+        // grid of 20 dots (5 x 4 in the wide top tiles, 4 x 5 in the bottom ones). Listed
+        // roughly left to right so DISTRICTS[2], the reader's, is the bottom-centre tile.
+        var TILES = [
+          { x: 6, y: 91, w: 109.33, h: 85, cols: 4, rows: 5 },
+          { x: 6, y: 6, w: 164, h: 85, cols: 5, rows: 4 },
+          { x: 115.33, y: 91, w: 109.33, h: 85, cols: 4, rows: 5 },
+          { x: 170, y: 6, w: 164, h: 85, cols: 5, rows: 4 },
+          { x: 224.67, y: 91, w: 109.33, h: 85, cols: 4, rows: 5 },
+        ]
+        // The one bigger district: 100 cells in six centred rows, filled column by column so
+        // each party's region is a block from left to right.
+        var BLOB_ROWS = [14, 18, 18, 18, 18, 14]
+        var BLOB = { left: 20, top: 60 }
+        var STRIP_Y = 28 // centre of the lawmakers' row along the top edge
+        var ROW_PITCH = 36 // between the five gathered lawmakers (frame 2)
+        var SEAT_PITCH = 32 // between two lawmakers of the same party (frame 3)
+        var CENTER_X = 170
+
+        // ---------- timeline: one leg per frame, windows in ms, mirrored when played backwards ----------
+        var LEGS = [
+          { dur: 1200, win: { repvis: [100, 600], strength: [550, 1200] } },
+          {
+            dur: 1700,
+            win: { borders: [0, 600], outline: [300, 1200], dotpos: [150, 1600], reppos: [300, 1500] },
+          },
+          {
+            dur: 1900,
+            win: {
+              caption: [0, 500],
+              morph: [
+                [500, 950],
+                [1100, 1550],
+              ],
+              reppos: [1050, 1800],
+              strength: [1200, 1900],
+            },
+          },
+        ]
+        var HOLD = 500 // Replay's pause between frames
+
+        var clamp = function (v) {
+          return v < 0 ? 0 : v > 1 ? 1 : v
+        }
+        var easeOutExpo = function (t) {
+          return t >= 1 ? 1 : 1 - Math.pow(2, -10 * t)
+        }
+
+        // ---------- the people and the lawmakers ----------
+        var winners = DISTRICTS.map(function (d) {
+          var best = 0
+          d.forEach(function (n, p) {
+            if (n > d[best]) best = p
+          })
+          return best
+        })
+        var hasWinner = PARTIES.map(function (_, p) {
+          return winners.indexOf(p) >= 0
+        })
+
+        var dots = [] // { party, district, k, pos0: [x, y], pos1: [x, y] }
+        DISTRICTS.forEach(function (d, di) {
+          var tile = TILES[di]
+          var gridW = (tile.cols - 1) * PITCH0 + 2 * R
+          var gridH = (tile.rows - 1) * PITCH0 + 2 * R
+          var left = tile.x + (tile.w - (ICON + GAP + gridW)) / 2
+          var top = tile.y + (tile.h - gridH) / 2
+          var i = 0
+          d.forEach(function (n, p) {
+            for (var k = 0; k < n; k += 1, i += 1) {
+              var row = Math.floor(i / tile.cols)
+              var col = i % tile.cols
+              dots.push({
+                party: p,
+                district: di,
+                k: k,
+                pos0: [left + ICON + GAP + R + col * PITCH0, top + R + row * PITCH0],
+                pos1: null,
+              })
+            }
+          })
+        })
+
+        // Frame 2 cells, column by column, top to bottom.
+        var cells = []
+        var blobCols = Math.max.apply(null, BLOB_ROWS)
+        for (var c = 0; c < blobCols; c += 1) {
+          for (var r = 0; r < BLOB_ROWS.length; r += 1) {
+            var off = (blobCols - BLOB_ROWS[r]) / 2
+            if (c >= off && c < off + BLOB_ROWS[r]) {
+              cells.push([BLOB.left + R + c * PITCH1, BLOB.top + R + r * PITCH1])
+            }
+          }
+        }
+        var regionX = [] // the centre of each party's region
+        var next = 0
+        PARTIES.forEach(function (_, p) {
+          var mine = dots.filter(function (dot) {
+            return dot.party === p
+          })
+          var sum = 0
+          mine.forEach(function (dot) {
+            dot.pos1 = cells[next]
+            sum += cells[next][0]
+            next += 1
+          })
+          regionX.push(mine.length ? sum / mine.length : CENTER_X)
+        })
+
+        // You: the middle dog of your district, and in frame 2 the cell nearest your region's centre.
+        var meDot = (function () {
+          var mine = dots.filter(function (dot) {
+            return dot.district === ME.district && dot.party === ME.party
+          })
+          return mine[Math.floor(mine.length / 2)]
+        })()
+        ;(function () {
+          var mine = dots.filter(function (dot) {
+            return dot.party === ME.party
+          })
+          var cx = regionX[ME.party]
+          var cy = BLOB.top + R + ((BLOB_ROWS.length - 1) * PITCH1) / 2
+          var best = mine[0]
+          var bestD = Infinity
+          mine.forEach(function (dot) {
+            var d = Math.hypot(dot.pos1[0] - cx, dot.pos1[1] - cy)
+            if (d < bestD) {
+              bestD = d
+              best = dot
+            }
+          })
+          var swap = best.pos1
+          best.pos1 = meDot.pos1
+          meDot.pos1 = swap
+        })()
+
+        // The five lawmakers: one per district in frame 1, a row in frame 2, PR seats in frame 3.
+        var reps = TILES.map(function (tile, di) {
+          var gridW = (tile.cols - 1) * PITCH0 + 2 * R
+          var left = tile.x + (tile.w - (ICON + GAP + gridW)) / 2
+          return { district: di, won: winners[di], pos0: [left + ICON / 2, tile.y + tile.h / 2] }
+        })
+        var byX = reps.slice().sort(function (a, b) {
+          return a.pos0[0] - b.pos0[0]
+        })
+        var seats = [] // PR seats left to right: { party, pos2 }
+        PARTIES.forEach(function (party, p) {
+          for (var s = 0; s < party.seats; s += 1) {
+            seats.push({
+              party: p,
+              pos2: [regionX[p] + (s - (party.seats - 1) / 2) * SEAT_PITCH, STRIP_Y],
+            })
+          }
+        })
+        byX.forEach(function (rep, rank) {
+          rep.pos1 = [CENTER_X + (rank - (reps.length - 1) / 2) * ROW_PITCH, STRIP_Y]
+          rep.seat = seats[rank] || seats[seats.length - 1]
+        })
+
+        // ---------- the state vector ----------
+        // dots: x, y, strength; reps: x, y, visible, morph (0 winner, 1 plain seat, 2 PR animal);
+        // then borders, outline, caption. `trackOf` names the timeline track of each channel.
+        var N = dots.length
+        var M = reps.length
+        var G = N * 3 + M * 4
+        var LEN = G + 3
+        var trackOf = new Array(LEN)
+        dots.forEach(function (_, i) {
+          trackOf[i * 3] = 'dotpos'
+          trackOf[i * 3 + 1] = 'dotpos'
+          trackOf[i * 3 + 2] = 'strength'
+        })
+        reps.forEach(function (_, j) {
+          var b = N * 3 + j * 4
+          trackOf[b] = 'reppos'
+          trackOf[b + 1] = 'reppos'
+          trackOf[b + 2] = 'repvis'
+          trackOf[b + 3] = 'morph'
+        })
+        trackOf[G] = 'borders'
+        trackOf[G + 1] = 'outline'
+        trackOf[G + 2] = 'caption'
+        var TRACKS = ['dotpos', 'strength', 'reppos', 'repvis', 'morph', 'borders', 'outline', 'caption']
+
+        // Phase -1 is the pre-state frame 1 plays from: 100 full dots, nobody elected yet.
+        function stateFor(phase) {
+          var v = new Float64Array(LEN)
+          dots.forEach(function (dot, i) {
+            var pos = phase >= 1 ? dot.pos1 : dot.pos0
+            v[i * 3] = pos[0]
+            v[i * 3 + 1] = pos[1]
+            v[i * 3 + 2] =
+              phase < 0 ? 1 : phase >= 2 ? (PARTIES[dot.party].seats > 0 ? 1 : 0) : hasWinner[dot.party] ? 1 : 0
+          })
+          reps.forEach(function (rep, j) {
+            var b = N * 3 + j * 4
+            var pos = phase >= 2 ? rep.seat.pos2 : phase >= 1 ? rep.pos1 : rep.pos0
+            v[b] = pos[0]
+            v[b + 1] = pos[1]
+            v[b + 2] = phase < 0 ? 0 : 1
+            v[b + 3] = phase >= 2 ? 2 : 0
+          })
+          v[G] = phase >= 1 ? 0 : 1
+          v[G + 1] = phase >= 1 ? 1 : 0
+          v[G + 2] = phase >= 2 ? 1 : 0
+          return v
+        }
+
+        // ---------- build the picture ----------
+        var svgNS = 'http://www.w3.org/2000/svg'
+        var xlinkNS = 'http://www.w3.org/1999/xlink'
+        function el(name, attrs) {
+          var node = document.createElementNS(svgNS, name)
+          Object.keys(attrs || {}).forEach(function (k) {
+            if (k === 'href') node.setAttributeNS(xlinkNS, 'xlink:href', attrs[k])
+            node.setAttribute(k, attrs[k])
+          })
+          return node
+        }
+        var dotsG = document.getElementById('dots')
+        var meG = document.getElementById('me')
+        var repsG = document.getElementById('reps')
+        var dotEls = dots.map(function (dot) {
+          var circle = el('circle', { r: R, fill: PARTIES[dot.party].color })
+          ;(dot === meDot ? meG : dotsG).appendChild(circle)
+          return circle
+        })
+        var ring = el('circle', { class: 'map-me', r: R + 3 })
+        meG.appendChild(ring)
+        var repEls = reps.map(function (rep) {
+          var g = el('g', { class: 'rep' })
+          var won = el('use', {
+            href: '#i-' + PARTIES[rep.won].icon,
+            width: ICON,
+            height: ICON,
+            style: 'color: ' + PARTIES[rep.won].color,
+          })
+          var sq = el('rect', { class: 'sq', x: 3, y: 3, width: 18, height: 18, rx: 4 })
+          var ani = el('use', {
+            href: '#i-' + PARTIES[rep.seat.party].icon,
+            width: ICON,
+            height: ICON,
+            style: 'color: ' + PARTIES[rep.seat.party].color,
+          })
+          g.appendChild(won)
+          g.appendChild(sq)
+          g.appendChild(ani)
+          repsG.appendChild(g)
+          return { g: g, won: won, sq: sq, ani: ani }
+        })
+        var bordersEl = document.getElementById('borders')
+        var outlineEl = document.getElementById('outline')
+        var capEl = document.getElementById('cap')
+        var keyDim = document.getElementById('key-dim')
+        var keyDimDot = document.getElementById('key-dim-dot')
+        var keyMe = document.getElementById('key-me')
+        keyDimDot.style.setProperty('--c', PARTIES[ME.party].color)
+        keyDimDot.style.setProperty('--mix', Math.round(DIM * 100) + '%')
+        keyMe.style.setProperty('--c', PARTIES[ME.party].color)
+
+        var state = stateFor(-1)
+
+        function render(v) {
+          state = v
+          var minS = 1
+          dots.forEach(function (_, i) {
+            var s = v[i * 3 + 2]
+            if (s < minS) minS = s
+            var c = dotEls[i]
+            c.setAttribute('cx', v[i * 3])
+            c.setAttribute('cy', v[i * 3 + 1])
+            c.setAttribute('fill-opacity', DIM + (1 - DIM) * s)
+          })
+          var mi = dots.indexOf(meDot)
+          ring.setAttribute('cx', v[mi * 3])
+          ring.setAttribute('cy', v[mi * 3 + 1])
+          reps.forEach(function (_, j) {
+            var b = N * 3 + j * 4
+            var vis = v[b + 2]
+            var m = v[b + 3]
+            var sc = 0.4 + 0.6 * vis
+            var r = repEls[j]
+            r.g.setAttribute(
+              'transform',
+              'translate(' + v[b] + ' ' + v[b + 1] + ') scale(' + sc + ') translate(-12 -12)',
+            )
+            r.g.setAttribute('opacity', vis)
+            r.won.setAttribute('opacity', clamp(1 - m))
+            r.sq.setAttribute('opacity', clamp(1 - Math.abs(m - 1)))
+            r.ani.setAttribute('opacity', clamp(m - 1))
+          })
+          bordersEl.setAttribute('opacity', v[G])
+          outlineEl.setAttribute('opacity', v[G + 1])
+          var cap = v[G + 2]
+          capEl.style.opacity = cap
+          capEl.style.transform = 'translateY(' + (1 - cap) * 6 + 'px)'
+          capEl.setAttribute('aria-hidden', cap < 0.5 ? 'true' : 'false')
+          // the legend mirrors the reader's dot, and the dim key goes when nobody is dim
+          var meS = v[mi * 3 + 2]
+          keyMe.style.setProperty('--mix', Math.round((DIM + (1 - DIM) * meS) * 100) + '%')
+          keyDim.style.opacity = 1 - minS
+          keyDim.setAttribute('aria-hidden', minS > 0.5 ? 'true' : 'false')
+        }
+
+        // ---------- the engine: setPhase(n) ----------
+        var from = -1 // the phase last settled at (or departed from)
+        var to = -1 // the phase being approached; equal to `from` when idle
+        var raf = 0
+        var timers = []
+        function reduced() {
+          return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        }
+        function leg(a, b) {
+          return { from: a, to: b, spec: LEGS[Math.max(a, b)], forward: b > a }
+        }
+        // The legs from where the picture is now (possibly mid-flight) to `target`.
+        function plan(target) {
+          var steps = []
+          var at = from
+          if (from !== to) {
+            if (Math.sign(target - from) === Math.sign(to - from)) {
+              steps.push(leg(from, to))
+              at = to
+            } else {
+              steps.push(leg(to, from))
+              at = from
+            }
+          }
+          while (at !== target) {
+            var nx = at + Math.sign(target - at)
+            steps.push(leg(at, nx))
+            at = nx
+          }
+          return steps
+        }
+        function progressOf(spec, forward, t) {
+          var P = {}
+          TRACKS.forEach(function (name) {
+            var wins = spec.win[name]
+            if (!wins) wins = [[0, spec.dur]]
+            else if (typeof wins[0] === 'number') wins = [wins]
+            var sum = 0
+            wins.forEach(function (w) {
+              var s = forward ? w[0] : spec.dur - w[1]
+              var e = forward ? w[1] : spec.dur - w[0]
+              sum += easeOutExpo(clamp((t - s) / (e - s)))
+            })
+            P[name] = sum / wins.length
+          })
+          return P
+        }
+        function run(steps, start) {
+          var i = 0
+          var startLeg = function (v0) {
+            var L = steps[i]
+            from = L.from
+            to = L.to
+            var v1 = stateFor(L.to)
+            var t0 = performance.now()
+            var tick = function (ts) {
+              var t = Math.min(ts - t0, L.spec.dur)
+              var P = progressOf(L.spec, L.forward, t)
+              var v = new Float64Array(LEN)
+              for (var k = 0; k < LEN; k += 1) v[k] = v0[k] + (v1[k] - v0[k]) * P[trackOf[k]]
+              render(v)
+              if (t < L.spec.dur) {
+                raf = requestAnimationFrame(tick)
+              } else {
+                from = to = L.to
+                i += 1
+                if (i < steps.length) startLeg(v1)
+                else mark()
+              }
+            }
+            raf = requestAnimationFrame(tick)
+          }
+          startLeg(start)
+        }
+        function stop() {
+          cancelAnimationFrame(raf)
+          timers.forEach(clearTimeout)
+          timers = []
+        }
+        // Animate from wherever the picture is to frame `n`'s end state (n = 0, 1, 2), in
+        // either direction; `jump` (or prefers-reduced-motion) shows the end state at once.
+        function setPhase(n, jump) {
+          n = Math.max(0, Math.min(LEGS.length - 1, n | 0))
+          if (from !== to && n === to && !jump) return
+          stop()
+          if (jump || reduced()) {
+            from = to = n
+            render(stateFor(n))
+            mark()
+            return
+          }
+          var steps = plan(n)
+          if (!steps.length) return
+          run(steps, state)
+          mark()
+        }
+        function replay() {
+          stop()
+          from = to = -1
+          render(stateFor(-1))
+          if (reduced()) {
+            setPhase(LEGS.length - 1, true)
+            return
+          }
+          var at = 0
+          var later = function (n) {
+            at += LEGS[n - 1].dur + HOLD
+            timers.push(
+              setTimeout(function () {
+                setPhase(n)
+              }, at),
+            )
+          }
+          setPhase(0)
+          for (var n = 1; n < LEGS.length; n += 1) later(n)
+        }
+
+        // ---------- review controls ----------
+        var buttons = Array.prototype.slice.call(document.querySelectorAll('#controls [data-phase]'))
+        function mark() {
+          buttons.forEach(function (b) {
+            b.setAttribute('aria-pressed', String(Number(b.getAttribute('data-phase')) === to))
+          })
+        }
+        buttons.forEach(function (b) {
+          b.addEventListener('click', function () {
+            setPhase(Number(b.getAttribute('data-phase')))
+          })
+        })
+        document.getElementById('replay').addEventListener('click', replay)
+        window.setPhase = setPhase
+
+        // Frame 1 plays on load, from the pre-state.
+        render(stateFor(-1))
+        setPhase(0)
+      })()
+    </script>
+  </body>
+</html>

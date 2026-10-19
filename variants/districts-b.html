@@ -1,0 +1,558 @@
+<!doctype html>
+<!--
+  Candidate B for "One bigger district." : THE PEOPLE
+
+  CONCEPT (3 sentences)
+  The 100 voters are the page's own dots, split into five fenced-off districts of twenty,
+  each with its one representative standing in front of it (a Cat in every district, which is
+  what winner-take-all gave in the section above) and a line from the reader's ringed dot to
+  the one representative that is theirs. The fences fade, the five groups relax into one crowd
+  of 100, and the five representatives gather into one row in front of everybody. Then lines
+  draw out from the reader's dot to all five: before, one of them was yours; now all five are.
+
+  PORTING INTO THE CODEBASE
+  - New component `src/components/Districts.jsx`, used in `sections.jsx` between the `wta` and
+    `pr` sections. Returns `<div className="figure">` with the SVG and a legend, like
+    `MiniDots`. Suggested props:
+      reps   five parties for the five icons (pass `e.wta.council.map((s) => s.party)`, which
+             is five Cats and keeps the picture honest with the council above it)
+      me     `{ district: 2, col: 2, row: 0 }`, which dot is the reader (default is fine)
+      play   boolean, start the animation (sections mount when revealed, so mount is enough)
+  - Icons: `lucide-react` icons render an `<svg>`, and nested SVGs take x/y, so inside the big
+    SVG use `<PartyIcon party={p} size={24} x={x - 12} y={12} />` per rep and set the group's
+    `color` from `p.color` (the same `--c` idea as everywhere else). This file inlines the
+    Lucide v0.562 cat/dog/bird/fish paths as `<symbol>`s instead.
+  - Motion is a requestAnimationFrame loop (one `render(ms)` function, exponential ease-out),
+    not CSS, because the line endpoints move with the geometry. So the global
+    `prefers-reduced-motion` rule in styles.css does not reach it: the component must check
+    `matchMedia('(prefers-reduced-motion: reduce)')` itself and render the end state. Run the
+    loop from a `useEffect`, guarded with a `prev` ref the way App.jsx does, since StrictMode
+    double-runs effects in dev.
+  - CSS variables it needs: --ink (the ring), --ink-2 (the lines), --ink-3 (people, box,
+    fences), plus the existing .figure / .legend / .dot / .dot.me rules. New rules to add to
+    styles.css are the `.districts ...` block below (six short rules).
+  - Geometry constants are at the top of the script; the SVG is 340 x 153 user units, so at the
+    page's 343 to 408px it is roughly 1:1 with pixels.
+
+  THINGS THE OWNER SHOULD KNOW
+  - Dots are `--ink-3`, a third dot state after "coloured by party" and "grey, no one on the
+    council". Grey was ruled out because one figure up it means "unrepresented", and this
+    picture is about where you live, not how you voted. If you'd rather colour by party, it is
+    one line in `buildDots`.
+  - The legend says "you" instead of "your vote", because here the dot is the reader as a
+    resident, not a ballot. Easy to change back.
+  - The five reps are Cats on purpose: that is the five-Cat council the reader just saw, and the
+    next section's recount is what changes who they are. This figure only claims the structure
+    (five small districts become one, all five reps are yours). Edit `REPS` to preview others.
+  - No `.sec:last-of-type` min-height here; that rule exists for the sticky bar.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>One bigger district (candidate B)</title>
+    <meta name="theme-color" content="#f8f5ef" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Atkinson+Hyperlegible+Next:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* ---------- tokens and page, copied from src/styles.css ---------- */
+      :root {
+        --paper: oklch(0.977 0.012 85);
+        --paper-2: oklch(0.953 0.016 85);
+        --card: oklch(0.995 0.006 85);
+        --ink: oklch(0.25 0.025 55);
+        --ink-2: oklch(0.47 0.022 55);
+        --ink-3: oklch(0.64 0.016 55);
+        --line: oklch(0.87 0.016 80);
+        --line-2: oklch(0.925 0.012 80);
+        --slot: oklch(0.915 0.01 80);
+        --grey: oklch(0.83 0.008 80);
+        --focus: oklch(0.55 0.15 262);
+
+        --sp-1: 4px;
+        --sp-2: 8px;
+        --sp-3: 12px;
+        --sp-4: 16px;
+        --sp-5: 24px;
+        --sp-6: 32px;
+        --sp-7: 48px;
+
+        --display: 'Young Serif', 'Iowan Old Style', Georgia, serif;
+        --body: 'Atkinson Hyperlegible Next', 'Atkinson Hyperlegible', system-ui, sans-serif;
+
+        --ease: cubic-bezier(0.22, 1, 0.36, 1);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        -webkit-text-size-adjust: 100%;
+        background: var(--paper);
+      }
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font: 400 1.0625rem / 1.5 var(--body);
+        overflow-x: hidden;
+      }
+      h2,
+      p {
+        margin: 0;
+      }
+      button {
+        font: inherit;
+        color: inherit;
+      }
+      .page {
+        width: 100%;
+        max-width: 440px;
+        min-height: 100dvh;
+        margin: 0 auto;
+        padding: var(--sp-6) var(--sp-4) 0;
+        display: flex;
+        flex-direction: column;
+      }
+      .sec {
+        margin-top: var(--sp-7);
+        scroll-margin-top: var(--sp-5);
+        display: grid;
+        align-content: start;
+        gap: var(--sp-4);
+        animation: fade-up 0.4s var(--ease) both;
+      }
+      .sec h2 {
+        font: 400 1.5rem / 1.2 var(--display);
+        text-wrap: balance;
+      }
+      .sec p {
+        max-width: 38ch;
+      }
+      @media (min-width: 480px) {
+        .page {
+          padding-top: var(--sp-7);
+        }
+      }
+      @keyframes fade-up {
+        from {
+          opacity: 0;
+          transform: translateY(8px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* ---------- shared dot bits, copied from src/styles.css ---------- */
+      .figure {
+        display: grid;
+        gap: var(--sp-2);
+      }
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--sp-1) var(--sp-4);
+        justify-content: flex-end;
+        font-size: 0.8125rem;
+        color: var(--ink-2);
+      }
+      .legend span {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--sp-2);
+      }
+      .dot {
+        display: block;
+        aspect-ratio: 1;
+        border-radius: 50%;
+        background: var(--slot);
+      }
+      .legend .dot {
+        width: 11px;
+      }
+      .dot.me {
+        position: relative;
+        z-index: 1;
+        outline: 2px solid var(--ink);
+        outline-offset: 1.5px;
+      }
+
+      /* ---------- new: the districts figure ---------- */
+      .districts {
+        display: block;
+        width: 100%;
+        height: auto;
+        overflow: visible;
+      }
+      .districts .box,
+      .districts .fences line {
+        fill: none;
+        stroke: var(--ink-3);
+        stroke-width: 1.5;
+      }
+      .districts .people circle {
+        fill: var(--ink-3);
+      }
+      .districts .ring {
+        fill: none;
+        stroke: var(--ink);
+        stroke-width: 2;
+      }
+      .districts .link {
+        fill: none;
+        stroke: var(--ink-2);
+        stroke-width: 1.75;
+        stroke-linecap: round;
+      }
+      /* legend swatches for this figure */
+      .legend .dot.person {
+        background: var(--ink-3);
+      }
+      .legend .link-swatch {
+        display: block;
+        width: 18px;
+        height: 0;
+        border-top: 2px solid var(--ink-2);
+        border-radius: 1px;
+      }
+
+      /* review only: the replay control */
+      .replay {
+        appearance: none;
+        justify-self: start;
+        min-height: 44px;
+        padding: 0 var(--sp-2);
+        margin-left: calc(-1 * var(--sp-2));
+        border: 0;
+        border-radius: 8px;
+        background: none;
+        color: var(--ink-2);
+        font-size: 0.875rem;
+        text-decoration: underline;
+        text-underline-offset: 3px;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .replay:focus-visible {
+        outline: 3px solid var(--focus);
+        outline-offset: 2px;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.01ms !important;
+          animation-delay: 0ms !important;
+          transition-duration: 0.01ms !important;
+          scroll-behavior: auto !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <section class="sec">
+        <h2>One bigger district.</h2>
+        <p>
+          Now imagine your neighborhood district is combined with other nearby districts. Just
+          like you have 2 U.S. senators, you'd have 5 state representatives and each will
+          represent you all.
+        </p>
+
+        <div class="figure">
+          <svg
+            id="fig"
+            class="districts"
+            viewBox="0 0 340 153"
+            role="img"
+            aria-label="Five small districts, each with one representative, become one bigger district. Five representatives stand in front of all 100 people, and every one of the five represents you."
+          >
+            <defs>
+              <!-- Lucide v0.562 icons, stroke 2.25 at 24px like PartyIcon -->
+              <symbol
+                id="i-cat"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.25"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path
+                  d="M12 5c.67 0 1.35.09 2 .26 1.78-2 5.03-2.84 6.42-2.26 1.4.58-.42 7-.42 7 .57 1.07 1 2.24 1 3.44C21 17.9 16.97 21 12 21s-9-3-9-7.56c0-1.25.5-2.4 1-3.44 0 0-1.89-6.42-.5-7 1.39-.58 4.72.23 6.5 2.23A9.04 9.04 0 0 1 12 5Z"
+                />
+                <path d="M8 14v.5" />
+                <path d="M16 14v.5" />
+                <path d="M11.25 16.25h1.5L12 17l-.75-.75Z" />
+              </symbol>
+              <symbol
+                id="i-dog"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.25"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M11.25 16.25h1.5L12 17z" />
+                <path d="M16 14v.5" />
+                <path
+                  d="M4.42 11.247A13.152 13.152 0 0 0 4 14.556C4 18.728 7.582 21 12 21s8-2.272 8-6.444a11.702 11.702 0 0 0-.493-3.309"
+                />
+                <path d="M8 14v.5" />
+                <path
+                  d="M8.5 8.5c-.384 1.05-1.083 2.028-2.344 2.5-1.931.722-3.576-.297-3.656-1-.113-.994 1.177-6.53 4-7 1.923-.321 3.651.845 3.651 2.235A7.497 7.497 0 0 1 14 5.277c0-1.39 1.844-2.598 3.767-2.277 2.823.47 4.113 6.006 4 7-.08.703-1.725 1.722-3.656 1-1.261-.472-1.855-1.45-2.239-2.5"
+                />
+              </symbol>
+              <symbol
+                id="i-bird"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.25"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M16 7h.01" />
+                <path d="M3.4 18H12a8 8 0 0 0 8-8V7a4 4 0 0 0-7.28-2.3L2 20" />
+                <path d="m20 7 2 .5-2 .5" />
+                <path d="M10 18v3" />
+                <path d="M14 17.75V21" />
+                <path d="M7 18a6 6 0 0 0 3.84-10.61" />
+              </symbol>
+              <symbol
+                id="i-fish"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.25"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path
+                  d="M6.5 12c.94-3.46 4.94-6 8.5-6 3.56 0 6.06 2.54 7 6-.94 3.47-3.44 6-7 6s-7.56-2.53-8.5-6Z"
+                />
+                <path d="M18 12v.5" />
+                <path d="M16 17.93a9.77 9.77 0 0 1 0-11.86" />
+                <path
+                  d="M7 10.67C7 8 5.58 5.97 2.73 5.5c-1 1.5-1 5 .23 6.5-1.24 1.5-1.24 5-.23 6.5C5.58 18.03 7 16 7 13.33"
+                />
+                <path d="M10.46 7.26C10.2 5.88 9.17 4.24 8 3h5.8a2 2 0 0 1 1.98 1.67l.23 1.4" />
+                <path d="m16.01 17.93-.23 1.4A2 2 0 0 1 13.8 21H9.5a5.96 5.96 0 0 0 1.49-3.98" />
+              </symbol>
+            </defs>
+            <!-- box, fences, links, people, ring, reps are added by the script, in that order -->
+          </svg>
+          <p class="legend">
+            <span><i class="link-swatch" aria-hidden="true"></i> your representatives</span>
+            <span><i class="dot me person" aria-hidden="true"></i> you</span>
+          </p>
+        </div>
+
+        <button class="replay" id="replay" type="button">Replay</button>
+      </section>
+    </div>
+
+    <script>
+      ;(function () {
+        'use strict'
+
+        /* ---------- the world ---------- */
+        // Five districts, one representative each. Winner-take-all gave every one of them to
+        // Cats (that is the five-Cat council the reader just saw). Edit to preview others.
+        var REPS = ['cat', 'cat', 'cat', 'cat', 'cat']
+        var COLORS = {
+          cat: 'oklch(0.63 0.18 45)',
+          dog: 'oklch(0.5 0.16 262)',
+          bird: 'oklch(0.7 0.15 85)',
+          fish: 'oklch(0.56 0.12 185)',
+        }
+        // The reader: middle district, top row, third dot in.
+        var ME = { district: 2, col: 2, row: 0 }
+
+        /* ---------- geometry, in SVG user units (about 1:1 with px on a phone) ---------- */
+        var BOX = { x: 0.75, y: 0.75, w: 338.5, h: 151.5 } // the land; it never changes size
+        var DISTRICTS = 5
+        var COLS = 4 // dots per row inside one district
+        var ROWS = 5
+        var R = 5.5 // dot radius
+        var STEP0 = 14 // dot pitch inside a district (before)
+        var STEP1 = 16.2 // dot pitch across the one big district (after)
+        var CELL = BOX.w / DISTRICTS // 67.7, one small district
+        var GROUP_W = (COLS - 1) * STEP0 + 2 * R // 53
+        var MARGIN0 = (CELL - GROUP_W) / 2 // 7.35
+        var GRID_W = (COLS * DISTRICTS - 1) * STEP1 + 2 * R // 318.8
+        var PAD1 = (BOX.w - GRID_W) / 2 // 9.85
+        var DOTS_TOP = 74 // top edge of the top row of dots
+        var ICON = 24
+        var ICON_TOP = 12
+        var REP_STEP1 = 32 // pitch of the five reps once they stand together
+        var RING_R = 8 // the reader's ring (2px stroke at r 8 is 7 to 9, like outline-offset 1.5)
+        var LINE_Y1 = DOTS_TOP + R - RING_R - 1.5 // lines leave just above the ring
+        var LINE_Y2 = ICON_TOP + ICON // and arrive at the rep's feet
+
+        /* ---------- timeline, ms ---------- */
+        var T = {
+          firstLine: [400, 850], // "this one is yours"
+          merge: [1000, 2100], // fences go, groups relax into one, reps gather
+          links: 2100, // the other four lines, nearest first
+          linkDur: 450,
+          linkGap: 90,
+        }
+        // Order the remaining lines draw in: the reps next to yours first, then the outer two.
+        var LINK_ORDER = []
+        for (var step = 1; step < DISTRICTS; step++) {
+          if (ME.district - step >= 0) LINK_ORDER.push(ME.district - step)
+          if (ME.district + step < DISTRICTS) LINK_ORDER.push(ME.district + step)
+        }
+        var END = T.links + (LINK_ORDER.length - 1) * T.linkGap + T.linkDur + 50
+
+        function clamp(v) {
+          return v < 0 ? 0 : v > 1 ? 1 : v
+        }
+        function easeOutExpo(t) {
+          return t >= 1 ? 1 : 1 - Math.pow(2, -10 * t)
+        }
+        function lerp(a, b, t) {
+          return a + (b - a) * t
+        }
+        function dotX(district, col, m) {
+          var before = BOX.x + district * CELL + MARGIN0 + col * STEP0 + R
+          var after = BOX.x + PAD1 + (district * COLS + col) * STEP1 + R
+          return lerp(before, after, m)
+        }
+        function dotY(row) {
+          return DOTS_TOP + R + row * STEP0
+        }
+        function repX(i, m) {
+          var before = BOX.x + (i + 0.5) * CELL
+          var after = BOX.x + BOX.w / 2 + (i - (DISTRICTS - 1) / 2) * REP_STEP1
+          return lerp(before, after, m)
+        }
+
+        /* ---------- build the picture once ---------- */
+        var NS = 'http://www.w3.org/2000/svg'
+        var svg = document.getElementById('fig')
+        function el(name, attrs, parent) {
+          var e = document.createElementNS(NS, name)
+          for (var k in attrs) e.setAttribute(k, attrs[k])
+          parent.appendChild(e)
+          return e
+        }
+
+        el('rect', { class: 'box', x: BOX.x, y: BOX.y, width: BOX.w, height: BOX.h, rx: 10 }, svg)
+
+        var fences = el('g', { class: 'fences' }, svg)
+        for (var f = 1; f < DISTRICTS; f++) {
+          var fx = BOX.x + f * CELL
+          el('line', { x1: fx, y1: BOX.y, x2: fx, y2: BOX.y + BOX.h }, fences)
+        }
+
+        var linksG = el('g', { class: 'links' }, svg)
+        var links = REPS.map(function () {
+          return el('line', { class: 'link' }, linksG)
+        })
+
+        var people = el('g', { class: 'people' }, svg)
+        var dots = []
+        for (var d = 0; d < DISTRICTS; d++) {
+          for (var row = 0; row < ROWS; row++) {
+            for (var col = 0; col < COLS; col++) {
+              dots.push({ district: d, col: col, el: el('circle', { r: R, cy: dotY(row) }, people) })
+            }
+          }
+        }
+
+        var ring = el('circle', { class: 'ring', r: RING_R, cy: dotY(ME.row) }, svg)
+
+        var repsG = el('g', { class: 'reps' }, svg)
+        var reps = REPS.map(function (name) {
+          var g = el('g', { class: 'rep', style: 'color:' + COLORS[name] }, repsG)
+          el('use', { href: '#i-' + name, width: ICON, height: ICON }, g)
+          return g
+        })
+
+        /* ---------- draw the picture at time `now` ---------- */
+        function render(now) {
+          var m = easeOutExpo(clamp((now - T.merge[0]) / (T.merge[1] - T.merge[0])))
+          var fenceOp = 1 - easeOutExpo(clamp((now - T.merge[0]) / 350))
+          fences.setAttribute('opacity', fenceOp)
+
+          for (var i = 0; i < dots.length; i++) {
+            dots[i].el.setAttribute('cx', dotX(dots[i].district, dots[i].col, m))
+          }
+          var meX = dotX(ME.district, ME.col, m)
+          ring.setAttribute('cx', meX)
+
+          for (var r = 0; r < reps.length; r++) {
+            var rx = repX(r, m)
+            reps[r].setAttribute('transform', 'translate(' + (rx - ICON / 2) + ' ' + ICON_TOP + ')')
+
+            var p
+            if (r === ME.district) {
+              p = easeOutExpo(
+                clamp((now - T.firstLine[0]) / (T.firstLine[1] - T.firstLine[0])),
+              )
+            } else {
+              var start = T.links + LINK_ORDER.indexOf(r) * T.linkGap
+              p = easeOutExpo(clamp((now - start) / T.linkDur))
+            }
+            var dx = rx - meX
+            var dy = LINE_Y2 - LINE_Y1
+            var len = Math.sqrt(dx * dx + dy * dy)
+            var line = links[r]
+            line.setAttribute('x1', meX)
+            line.setAttribute('y1', LINE_Y1)
+            line.setAttribute('x2', rx)
+            line.setAttribute('y2', LINE_Y2)
+            line.setAttribute('stroke-dasharray', len)
+            line.setAttribute('stroke-dashoffset', len * (1 - p))
+            line.setAttribute('opacity', p > 0 ? 1 : 0)
+          }
+        }
+
+        /* ---------- play ---------- */
+        var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        var raf = 0
+        var cut = 0
+        var t0 = 0
+
+        function frame(ts) {
+          var now = ts - t0
+          if (now < END) {
+            render(now)
+            raf = requestAnimationFrame(frame)
+          } else {
+            render(END)
+          }
+        }
+        function play() {
+          cancelAnimationFrame(raf)
+          clearTimeout(cut)
+          if (reduced) {
+            // No motion: show the before picture, then cut to the end picture.
+            render(T.merge[0] - 1)
+            cut = setTimeout(function () {
+              render(END)
+            }, 1000)
+            return
+          }
+          t0 = performance.now()
+          render(0)
+          raf = requestAnimationFrame(frame)
+        }
+
+        document.getElementById('replay').addEventListener('click', play)
+
+        if (reduced) render(END)
+        else play()
+      })()
+    </script>
+  </body>
+</html>

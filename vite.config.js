@@ -1,14 +1,16 @@
+import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import tailwindcss from '@tailwindcss/vite'
 
-// Relative base so the built app works at any path or subdomain
-// (mi-sim.representation.vote, a Pages preview URL, or a subpath later).
+// Two pages: index.html (the scroll story, src/v4/) and v3.html (the Next-button page, src/App.jsx).
 export default defineConfig({
-  base: './',
-  plugins: [react(), tailwindcss()],
-  test: {
-    environment: 'node',
-    include: ['src/**/*.test.js'],
+  plugins: [react()],
+  build: {
+    rollupOptions: {
+      input: {
+        main: fileURLToPath(new URL('./index.html', import.meta.url)),
+        v3: fileURLToPath(new URL('./v3.html', import.meta.url)),
+      },
+    },
   },
 })

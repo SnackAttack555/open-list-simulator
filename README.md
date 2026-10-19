@@ -1,196 +1,95 @@
-# Open-List PR Simulator
+# Five Seats
 
-A phone-first web app that lets someone cast a ballot in an open-list proportional
-election — for Hogwarts houses, Detroit sports legends, animation studios — and only
-then shows them how their vote was counted.
+A two-minute mock election that teaches proportional representation by having you
+do it. You and 99 simulated neighbors elect a five-seat town council from four parties
+(Cats, Dogs, Birds, Fish). You cast one vote, then watch the count: every 20 votes is a
+seat, leftovers decide the last seats, the most-voted candidates in your party fill its
+seats, and finally the same 100 voters are shown under winner-take-all.
 
-Version 2.0 is one scrolling page, read like an article. A sticky Next reveals the next
-section under the one being read and nothing above is ever removed, so going back is
-scrolling up. The order is the argument:
+Ground-up rewrite of version 2 (2026-10-10, in this repo's history), stripped to the
+essentials. `PRODUCT.md` keeps the original vision; this version keeps the lesson and drops
+everything else.
 
-1. **Intro** — three sentences and Start.
-2. **Ballot** — every party in one column. The button stays grey until the last party has
-   been scrolled into view and a name is marked, then reads "Cast my vote for Barry Sanders".
-3. **Winner takes all** — the party with the most votes takes all five seats; the visitor's
-   party, which had votes, has nobody.
-4. **Proportional representation** — the same votes, and one of the five is from their party.
-5. **How did that happen?** — every vote as a dot, full rows of one seat's worth checked,
-   leftovers to the closest. Plays through on its own; the sentences under it say the same.
-6. **Who gets the party's seat?** — the party's most-voted candidate, shown by re-sorting
-   the ballot order.
-7. **The difference** — the two percentages, and "Try another election".
-
-There is no world picker. `?theme=hogwarts` opens that election; missing or unknown means
-the region's own sports election (Detroit for Michigan). "Try another election" cycles to
-the next world.
-
-**The first run is arranged** (`src/lib/firstRun.js`). The page only works if winner-take-all
-goes badly for the visitor, and one vote in eight hundred can't make that happen. So on a
-browser's first election, if the visitor's party has the most votes, its total is swapped
-with the runner-up's — each party keeps its own candidates in their own proportions, at the
-other party's size. No votes are invented, nothing else is touched, and every later election
-is shown exactly as counted. This is deliberately the smallest arrangement that makes the
-contrast certain; it is not labelled on the page.
-
-The seat picture is dots only in 2.0. `docs/anim-storyboard-bars.html` and
-`docs/ab-test-dots-vs-bars.md` describe the bars arm that 1.x served from `?viz=bars`; it
-is parked, with its parsing and tests kept in `src/lib/variant.js`, and comes back for user
-testing in a later version. The other storyboards in `docs/` are the record of how the
-dots animation was designed.
-
-## Running it
+## Run it
 
 ```bash
 npm install
-npm run dev          # UI only, on a mock electorate — no database needed
+npm run dev        # http://localhost:5173 (/ is the scroll story, /v3.html the Next-button page)
+npm test           # election maths, all 20 possible votes (Vitest)
+npm run build      # static output in dist/, deploy anywhere
 ```
 
-`npm run dev` has no backend, so `src/lib/api.js` falls back to a local mock that
-generates the same synthetic electorate the real seed uses. The fallback is gated on
-`import.meta.env.DEV`, so a production outage surfaces as an error rather than quietly
-showing invented numbers.
+Deep link for testing: `/?v=dogs.snoopy&n=3` (vote as `party.candidate`, `n` the card to open
+on, 1 to 11; add `&run=2` for an unrigged deal). On `/v3.html`, `n` is how many steps of the
+count are revealed, 1 to 9.
 
-To run the real Worker and a local D1 database:
+The front page (`index.html`, code in `src/v4/`) is the lesson told as a scroll story: one
+picture of a hundred dots that only ever moves (your district, zoom out, the neighbours, merge
+into one, seats shared out), eleven text cards scrolling over it, no Next button. The earlier
+Next-button telling is kept at `/v3.html` so the two can be compared; the rest of this file
+describes that page.
 
-```bash
-npm run db:reset     # generate seed.sql, apply schema + seed to local D1
-npm run preview:full # build, then serve the real Worker + D1 locally
+## Shape
+
+One scrolling page, read like an article. Intro and ballot at the top; casting a vote
+replaces the ballot with a one-line receipt and reveals the first section of the count.
+The single sticky button at the bottom reveals each next section and scrolls to it, and
+nothing is ever removed, so the reader can scroll back up at any point. The sections:
+
+1. The votes are in: counted winner-take-all first, the familiar way. Five seats of one
+   colour, the 100 voters with 63 greyed out, and your party came second and got nothing.
+2. One bigger district, in three frames: five small districts where one party is the
+   biggest group but never half, and still wins every seat; the merge into one district
+   with the voters regrouped by party; then "What if everyone's voice was represented?"
+   and the five seats shared out to match the groups. Replays when scrolled back into view.
+3. Same votes, counted a different way: the proportional legislature, everyone coloured in.
+4. How the seats were decided: the rows-of-twenty picture (full rows get a seat, the
+   biggest leftovers get the last seats).
+5. Your party's seat: its candidates ranked, a seat on the winner.
+6. Every vote counted, and the name for it.
+
+**It always goes badly for you first.** On the first run in a tab the 99 neighbors are
+dealt out after you vote (`SHARES` in `src/data.js`): your party comes second with 27 votes,
+another party leads with 37 and would sweep under winner-take-all, and under PR your party
+holds one seat and your own candidate takes it. From the second run on the deal is random:
+Cats or Dogs lead (never your party), your candidate may lose, but the split is always 2/1/1/1. `npm test`
+checks every vote under every deal.
+
+## What changed from the original, and why
+
+- **No world picker, no backend, no persistence.** One fixed world and a dealt electorate
+  of 99 means the numbers can be hand-tuned: exactly 100 votes, a quota of exactly 20,
+  every dot is one person, and the story is the same whichever candidate you pick
+  (`src/election.test.js` proves it). The original's shared live tally made every number
+  approximate ("each dot is about 10 votes") and needed a Worker and a database.
+- **One page instead of screens.** Three sentences of intro, then the ballot, then the
+  count revealed a section at a time below. The reader always has the whole story above
+  them.
+- **Sentences first, pictures sparingly.** Every section is written for a ten-year-old.
+  Four pictures total, each only where a sentence couldn't carry the idea.
+- **Ballot as an accordion, not a carousel.** All four parties are visible at once on a
+  phone with no party pre-opened, so none gets the first-card advantage the original
+  documented. Scantron-style ovals make "mark one" self-explanatory. The button label
+  carries the choice ("Vote for Snoopy"), so there is no separate status line.
+- **The count is one picture.** Dots in rows of 20 per party; full rows outlined and
+  seated, leftover rows dashed, the biggest get the last chairs, the rest fade. The
+  original regrouped dots between beats and had to size a scale ladder to stay legible.
+- Dropped: the world picker, the primer, the ease survey, the dots-vs-bars A/B, the
+  "drawn from a hat" tie copy (the data can't tie), progress dots, back buttons, section
+  labels, stats tables, fine print, Tailwind and Motion.
+
+## Layout
+
+```
+src/data.js             the world: parties, candidates, simulated votes
+src/election.js         pure maths: Hare quota + largest remainder, open list
+src/election.test.js    npm test (Vitest)
+src/App.jsx             the page: intro, ballot, revealed sections, the one button
+src/sections.jsx        the five sections of the count, copy and all
+src/components/         Ballot, VoteDots, Districts, PartyList, Council, MiniDots,
+                        PartyIcon (Lucide cat/dog/bird/fish), inline (coloured names)
+variants/               the three candidate figures for "One bigger district" (B was chosen)
+src/styles.css          all styling; oklch tokens at the top
 ```
 
-```bash
-npm test             # seat-allocation maths, first-run relabel, URL parsing
-npm run lint
-```
-
-## Changing the content
-
-Almost everything lives in two files.
-
-- **`src/data/themes.js`** — the five universal rosters. Adding a theme means appending
-  one object. **Four parties per theme, five candidates per party.** Four is a content
-  decision, not a constraint the code enforces: five parties against five seats left
-  the last party winning nothing often enough that the ballot looked like a trap.
-  The word "party" is appended at display time by `partyName()` in `src/data/index.js`
-  rather than baked into the names, so the data stays "Gryffindor" and the screen
-  reads "Gryffindor party".
-- **`src/data/regions.js`** — what varies by state edition: the sports roster and the
-  state outline. v1 ships Michigan only.
-
-The one rule: **`id` values are written into the database.** Renaming an `id` orphans
-every vote already cast for it. Change a `name` freely; never an `id`.
-
-Removing a party is safe on the seed side — `npm run db:deploy` deletes and rewrites
-every `is_seed = 1` row per theme, so dropped parties disappear on the next seed. Real
-votes cast for a removed party are left in the table and ignored: `allocate()` builds
-from the theme and looks tallies up by id, so rows it doesn't recognise never reach the
-arithmetic. Check for them before dropping a party, because those voters silently stop
-being counted:
-
-```sql
-SELECT theme_id, list_id, COUNT(*) FROM votes
- WHERE is_seed = 0 AND list_id IN ('the','ids','you','are','dropping')
- GROUP BY theme_id, list_id;
-```
-
-To add a state edition, add an entry to `REGIONS` and generate its outline from Census
-data — never by hand:
-
-```bash
-npm i -D us-atlas d3-geo topojson-client
-node scripts/generate-outline.mjs 08     # Colorado; Michigan is 26
-npm uninstall us-atlas d3-geo topojson-client
-```
-
-Paste the printed `viewBox` and `path` into the region. Those three packages are
-deliberately not installed — they exist only to produce a string, and keeping them
-would mean carrying a build dependency for a constant.
-
-## How the election works
-
-Five seats. **Hare quota plus largest remainder**: 20% of the vote wins one spot, 40%
-wins two, and leftover seats go to whoever came closest. No legal threshold — at five
-seats the ~17% natural threshold does the work.
-
-Two independent steps, which is the whole teaching point:
-
-1. **How many** seats each list wins — from the list's total votes.
-2. **Which** candidates fill them — from preference votes alone. The order written in
-   `themes.js` is never consulted.
-
-`src/lib/allocate.js` is pure: no React, no network, no clock, no randomness. It works
-in integer arithmetic (scaling by seats rather than dividing by the quota) so a list
-sitting exactly on the quota boundary wins its seat instead of losing it to floating
-point error. Ties resolve through a deterministic FNV-1a draw — a real election draws a
-fresh lot, but a lot that re-rolled on every React render would make winners flicker.
-The UI calls it what it is: "drawn from a hat 🎩".
-
-## The synthetic electorate
-
-The first real visitor would otherwise land on a results screen containing their own
-single vote, which teaches nothing. So each theme starts with ~800 simulated voters, and
-the results screen says plainly how many are simulated.
-
-`src/lib/mockElectorate.js` is shared by the dev mock and the real seed, so what you tune
-in dev is what ships. List shares come from a fixed shape rather than raw randomness,
-because a seeded election where one list sweeps teaches the wrong lesson on the very
-first visit. Preference votes follow a fame curve with jitter — enough that neighbours
-trade places, not enough that a fifth-listed name leapfrogs a first-listed one.
-
-Seeding is idempotent. Re-running leaves 4,800 rows, not 9,600. Real votes are never
-touched.
-
-## Data and abuse control
-
-Votes go through the Worker, not straight from the browser, so no database
-credential ships in the page.
-
-- The `(theme, list, candidate)` triple must exist. Posting a real name on the wrong
-  list is refused too.
-- **IP addresses are never stored** — only a salted SHA-256, and `VOTE_SALT` must be set
-  as a secret.
-- **35 votes per IP hash per theme.** Not 1: a classroom, office, or conference room
-  shares one public IP, and a cap of 1 would lock out everyone after whoever voted
-  first. Over the cap the API returns success and records nothing, so a script gets no
-  signal to optimise against.
-- One ballot per theme per browser, in `localStorage`. A repeat visitor lands on the
-  results with their original pick restored, so the personal payoff still reads correctly
-  however much the election has grown. The local record is written only after the server
-  answers — writing it first would burn someone's vote on a dropped request.
-- The `ease` column and `POST /api/ease` remain in the Worker. Nothing in 2.0 calls them;
-  the ease question was dropped from the page.
-
-## Deploying
-
-**Pushing to `main` deploys.** The Cloudflare Worker is connected to this repo and runs
-`npm run build` then `npx wrangler deploy` on every push. Nothing else to do.
-
-This is a Worker serving static assets, not a Pages project — see the note in
-`wrangler.toml`. That matters because Cloudflare's git builds run `wrangler deploy`, and
-against the old Pages config that command failed outright.
-
-To deploy by hand, or from a fresh account:
-
-```bash
-npx wrangler login
-npx wrangler d1 create ols-votes     # paste the returned id into wrangler.toml
-npx wrangler secret put VOTE_SALT    # any long random string
-npm run db:deploy                    # schema + seed against the remote database
-npm run deploy                       # build + wrangler deploy
-```
-
-`VOTE_SALT` is a Worker secret, so it lives only in Cloudflare and never in the repo.
-Without it the API still runs and still never stores raw IPs, but it logs a warning and
-the hashes become guessable.
-
-For a custom domain, add it under the Worker's **Domains** tab, then point one CNAME at
-it. A path like `representation.vote/mi-sim` is *not* reachable from Namecheap DNS — a
-path has to be served by whatever already serves the apex domain, which would mean
-moving the domain's nameservers to Cloudflare. The app hardcodes no absolute URLs and no
-base path, so either choice works later with no code change.
-
-## Content and rights
-
-Character and film names appear as plain text in a free, non-commercial educational
-parody. There are no images, logos, crests, studio wordmarks, or fetched art anywhere —
-only original colour palettes and generic emoji. The footer states the app is
-unaffiliated.
+Content is plain-text parody of well-known characters, no images or logos.

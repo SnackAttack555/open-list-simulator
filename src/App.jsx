@@ -1,275 +1,209 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useReducedMotion } from 'motion/react'
-import { DEFAULT_REGION, getRegion, getTheme, getThemes } from './data/index.js'
-import { castVote, fetchResults, hasVoted, isFirstRun, myVoteIn } from './lib/api.js'
-import { allocate, describeMyVote } from './lib/allocate.js'
-import { relabelForFirstRun } from './lib/firstRun.js'
-import { resolveTheme } from './lib/variant.js'
-import { THEME_PARAM } from './config.js'
-import BallotBoxIcon from './components/BallotBoxIcon.jsx'
-import StickyBar from './components/StickyBar.jsx'
-import Intro from './sections/Intro.jsx'
-import Ballot from './sections/Ballot.jsx'
-import WinnerTakeAll from './sections/WinnerTakeAll.jsx'
-import Proportional from './sections/Proportional.jsx'
-import HowSeats from './sections/HowSeats.jsx'
-import PartySeats from './sections/PartySeats.jsx'
-import Wrap from './sections/Wrap.jsx'
-
-const REGION = DEFAULT_REGION
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { ArrowDown } from 'lucide-react'
+import { PARTIES } from './data.js'
+import { runElection } from './election.js'
+import { layoutFor, recordRun, runsSoFar, voteFromUrl } from './session.js'
+import { buildSections } from './sections.jsx'
+import Ballot from './components/Ballot.jsx'
+import { Cand, Party } from './components/inline.jsx'
 
 /**
- * The page is one column that grows.
+ * One page, read top to bottom like an article. The ballot sits under the
+ * intro; casting a vote reveals the first section of the count, and the one
+ * sticky button at the bottom reveals the next step each time. A step is
+ * either a new section or, inside a section with several steps, one more line
+ * of text and one more layer on its picture. Nothing is ever taken away, so
+ * the reader can scroll back up at any point.
  *
- * Each tap of the sticky button reveals the next section underneath the one
- * being read and scrolls it into view; nothing above is ever removed, so going
- * back is scrolling up. The order is the argument: vote, see the old system
- * give your side nothing, see the new one give it a seat, then learn why.
+ * A newly revealed section scrolls so its heading sits at the top of the
+ * screen (the last section is given a full screen of room so that is always
+ * possible), and Next stays off until the reader has scrolled to the end of
+ * what is on the page.
+ *
+ * The first election in a browser tab is rigged so the lesson lands (your party
+ * comes second, your candidate wins its seat); from the second run on, the
+ * neighbors' votes are dealt at random and anything can happen. The run count
+ * is the only thing kept, in sessionStorage, so it dies with the tab.
+ *
+ * For testing: ?v=dogs.snoopy&n=4 opens with that vote cast and four steps
+ * shown (steps: 1 wta, 2 district, 3 pr, 4-5 how, 6 party, 7 end). Add &run=2
+ * for an unrigged deal.
  */
-const INTRO = 0
-const BALLOT = 1
-const WTA = 2
-const PR = 3
-const HOW = 4
-const PARTY = 5
-const WRAP = 6
-
-export default function App() {
-  const reduced = useReducedMotion()
-  const region = getRegion(REGION)
-  const themes = getThemes(REGION)
-
-  // `?theme=hogwarts` picks the election; anything else is the region's own.
-  // Read once: the address bar doesn't change while the page is open.
-  const [themeId] = useState(
-    () =>
-      resolveTheme(window.location.search, themes.map((t) => t.id)) ?? region.sportsTheme.id,
-  )
-  const theme = getTheme(themeId, REGION)
-
-  // One ballot per election per browser. A repeat visitor starts at the results
-  // with their original pick restored.
-  const [returning] = useState(() => hasVoted(themeId))
-  const [selection, setSelection] = useState(() => myVoteIn(themeId))
-  const [stage, setStage] = useState(() => (returning ? WTA : INTRO))
-  const [results, setResults] = useState(null)
-  const [error, setError] = useState(null)
-  const [casting, setCasting] = useState(false)
-  const [seenAll, setSeenAll] = useState(false)
-  const [dropping, setDropping] = useState(false)
-
-  // Decided before the vote is stored, so a fresh browser reads as a first run
-  // even once its own ballot has been written. See relabelForFirstRun.
-  const [firstRun] = useState(() => isFirstRun(themeId))
-
-  const result = useMemo(() => {
-    if (!results) return null
-    const tallies = firstRun ? relabelForFirstRun(theme, results.tallies, selection) : results.tallies
-    return allocate(theme, tallies)
-  }, [results, firstRun, theme, selection])
-  const mine = useMemo(() => (result ? describeMyVote(result, selection) : null), [result, selection])
-
-  const sectionRefs = useRef({})
-  const scrolledTo = useRef(stage)
-
-  // Each newly revealed section scrolls to the top of the window. Not the
-  // initial one: a repeat visitor landing on the results should start at the
-  // top of the page like anyone else.
-  useEffect(() => {
-    if (stage === scrolledTo.current) return
-    scrolledTo.current = stage
-    const el = sectionRefs.current[stage]
-    if (!el) return
-    const frame = requestAnimationFrame(() =>
-      el.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' }),
-    )
-    return () => cancelAnimationFrame(frame)
-  }, [stage, reduced])
-
-  const handleCast = useCallback(async () => {
-    if (!selection || dropping) return
-    setDropping(true)
-    // Let the ballot finish dropping through the slot before the page moves on.
-    await new Promise((r) => setTimeout(r, 340))
-    setCasting(true)
-    setStage(WTA)
-    try {
-      // Strictly sequential: fetching the tally alongside the insert lets the
-      // read land first, and the voter's own ballot goes missing from their
-      // own results.
-      await castVote({
-        themeId,
-        listId: selection.listId,
-        candidateId: selection.candidateId,
-        regionId: REGION,
-      })
-      setResults(await fetchResults(themeId, REGION))
-    } catch (err) {
-      console.error(err)
-      setError('We could not reach the vote server, so this ballot may not have counted.')
-    } finally {
-      setCasting(false)
-      setDropping(false)
-    }
-  }, [themeId, selection, dropping])
-
-  // A repeat visitor sent straight to the results. Never while a ballot is in
-  // flight: handleCast owns that fetch, and it has to run after the insert.
-  useEffect(() => {
-    if (stage < WTA || results || casting) return
-    fetchResults(themeId, REGION)
-      .then(setResults)
-      .catch(() => setError('We could not load the results.'))
-  }, [stage, results, themeId, casting])
-
-  const nextTheme = themes[(themes.findIndex((t) => t.id === themeId) + 1) % themes.length]
-  const tryAnother = () => {
-    const url = new URL(window.location.href)
-    url.searchParams.set(THEME_PARAM, nextTheme.id)
-    window.location.assign(url)
-  }
-
-  const selectedName = selection
-    ? theme.lists
-        .find((l) => l.id === selection.listId)
-        ?.candidates.find((c) => c.id === selection.candidateId)?.name
-    : null
-  const bar = barFor({
-    stage,
-    result,
-    selection,
-    selectedName,
-    seenAll,
-    dropping,
-    setStage,
-    handleCast,
-    tryAnother,
-  })
-
-  const ref = (i) => (el) => {
-    sectionRefs.current[i] = el
-  }
-
-  return (
-    /* dvh, not `min-h-full`: a percentage min-height resolves against the
-       parent's *height*, which is auto here, so it would collapse and the
-       sticky bar would float mid-screen. dvh also tracks mobile browser chrome. */
-    <div className="flex min-h-dvh w-full flex-col">
-      <main className="mx-auto w-full max-w-[560px] px-5 pb-10">
-        {stage >= INTRO && stage < WTA && (
-          <div ref={ref(INTRO)}>
-            <Intro theme={theme} />
-          </div>
-        )}
-
-        {stage >= BALLOT && stage < WTA && (
-          <div ref={ref(BALLOT)} className="section-in scroll-mt-4">
-            <Ballot
-              theme={theme}
-              selection={selection}
-              onSelect={setSelection}
-              onSeenAll={setSeenAll}
-            />
-          </div>
-        )}
-
-        {stage >= WTA && (
-          <div ref={ref(WTA)} className="section-in scroll-mt-4">
-            {/* A repeat visitor lands here with no ballot above them, so the
-                page says which election this is and what they chose. */}
-            {returning && selectedName && (
-              <p className="pt-10 text-[17px] text-[var(--ink-soft)]">
-                You already voted in the {theme.name} election, for{' '}
-                <strong className="text-[var(--ink)]">{selectedName}</strong>.
-              </p>
-            )}
-            {result ? (
-              <WinnerTakeAll result={result} mine={mine} myVote={selection} />
-            ) : (
-              <p className="pt-12 text-[18px] text-[var(--ink-soft)]">
-                {error ?? 'Counting the votes…'}
-              </p>
-            )}
-          </div>
-        )}
-
-        {stage >= PR && result && (
-          <div ref={ref(PR)} className="section-in scroll-mt-4">
-            <Proportional result={result} mine={mine} myVote={selection} />
-          </div>
-        )}
-
-        {stage >= HOW && result && (
-          <div ref={ref(HOW)} className="section-in scroll-mt-4">
-            <HowSeats result={result} />
-          </div>
-        )}
-
-        {stage >= PARTY && result && (
-          <div ref={ref(PARTY)} className="section-in scroll-mt-4">
-            <PartySeats result={result} myVote={selection} theme={theme} />
-          </div>
-        )}
-
-        {stage >= WRAP && result && (
-          <div ref={ref(WRAP)} className="section-in scroll-mt-4">
-            <Wrap result={result} />
-          </div>
-        )}
-
-      </main>
-
-      <StickyBar note={bar.note} disabled={bar.disabled} onClick={bar.onClick}>
-        {bar.icon}
-        {bar.label}
-      </StickyBar>
-    </div>
-  )
+function fromUrl() {
+  const { vote, n, layout } = voteFromUrl()
+  return { vote, shown: vote ? Math.max(1, n) : 0, layout }
 }
 
-/**
- * What the one button says and does at each stage. Kept together so the whole
- * path reads in one place: Start → Cast → Next → Next → Next → Next → Again.
- */
-function barFor({
-  stage,
-  result,
-  selection,
-  selectedName,
-  seenAll,
-  dropping,
-  setStage,
-  handleCast,
-  tryAnother,
-}) {
-  const next = () => setStage(stage + 1)
-  switch (stage) {
-    case INTRO:
-      return { label: 'Start', onClick: next }
-    case BALLOT: {
-      const ready = Boolean(selection) && seenAll
-      // The instruction lives in the note line, in ink, where it can be
-      // read; a greyed-out button is the one place text is hardest to see.
-      // Once a name is chosen the button says it, so the note says nothing.
-      return {
-        note: !seenAll
-          ? 'Scroll to see every party'
-          : selectedName
-            ? null
-            : 'Tap a name to choose',
-        disabled: !ready || dropping,
-        onClick: handleCast,
-        icon: <BallotBoxIcon dropping={dropping} className="size-7" />,
-        label: dropping
-          ? 'Casting…'
-          : selectedName && seenAll
-            ? `Cast my vote for ${selectedName}`
-            : 'Cast my vote',
-      }
-    }
-    case WRAP:
-      return { label: 'Try another election', onClick: tryAnother }
-    default:
-      return { label: 'Next', disabled: !result, onClick: next }
+const atBottom = () =>
+  window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4
+
+const BAR = 102 // the sticky bar's height
+const MARGIN = 24
+
+/** Scroll down so `el` is fully visible above the bar, or top-aligned if it is taller than that. */
+function revealScroll(el) {
+  const r = el.getBoundingClientRect()
+  const top = window.scrollY + r.top - MARGIN
+  const bottom = window.scrollY + r.bottom + BAR + MARGIN - window.innerHeight
+  const target = Math.min(top, Math.max(bottom, 0))
+  window.scrollTo({ top: Math.max(window.scrollY, target), behavior: 'smooth' })
+}
+
+/** Bring `el` to the top of the screen, in either direction, so an animation on it is watched. */
+function showScroll(el) {
+  const r = el.getBoundingClientRect()
+  window.scrollTo({ top: window.scrollY + r.top - MARGIN, behavior: 'smooth' })
+}
+
+/** Which sections `shown` steps reveal, and how far into the last one. */
+function visible(sections, shown) {
+  const out = []
+  let left = shown
+  for (const s of sections) {
+    if (left <= 0) break
+    const steps = s.steps ?? 1
+    out.push({ section: s, phase: Math.min(left, steps) - 1 })
+    left -= steps
   }
+  return out
+}
+
+export default function App() {
+  const [start] = useState(fromUrl)
+  const [vote, setVote] = useState(start.vote)
+  const [layout, setLayout] = useState(start.layout)
+  const [shown, setShown] = useState(start.shown)
+  const [readToEnd, setReadToEnd] = useState(false)
+  const cast = shown > 0
+
+  const election = useMemo(
+    () => (cast && layout ? runElection(vote, layout) : null),
+    [cast, vote, layout],
+  )
+  const sections = useMemo(() => (election ? buildSections(election) : []), [election])
+  const totalSteps = sections.reduce((n, s) => n + (s.steps ?? 1), 0)
+  const done = cast && shown >= totalSteps
+  const shownSections = visible(sections, shown)
+
+  // Every step scrolls the new content into view: a new section, or the line a
+  // step added inside one. Scroll just far enough to see the bottom of it, but
+  // never so far that its top leaves the screen. A step whose picture animates
+  // first (`settle`) is two beats: bring the picture to the top of the screen
+  // now, and scroll on to the new line once the picture has settled. Compares
+  // against the last value rather than a "first run" flag, so StrictMode's
+  // double-run of effects in dev doesn't scroll the page on load.
+  const refs = useRef([])
+  const prevShown = useRef(shown)
+  const prevCount = useRef(shownSections.length)
+  useEffect(() => {
+    if (prevShown.current === shown) return
+    prevShown.current = shown
+    const count = shownSections.length
+    const newSection = prevCount.current !== count
+    prevCount.current = count
+    const last = shownSections[count - 1]
+    const section = refs.current[count - 1]
+    if (!section) return
+    if (newSection) {
+      revealScroll(section)
+      return
+    }
+    const part = section.querySelector('.part:last-of-type')
+    const settle = last.section.settle?.(last.phase) ?? 0
+    const figure = section.querySelector('.figure')
+    if (!settle || !figure) {
+      if (part) revealScroll(part)
+      return
+    }
+    showScroll(figure)
+    const t = setTimeout(() => part && revealScroll(part), settle + 100)
+    return () => clearTimeout(t)
+  }, [shown, shownSections])
+
+  // Next wakes up once the bottom of the page has been seen. Re-armed on every
+  // step; checked on scroll, on resize, and once after layout in case there is
+  // nothing to scroll.
+  useEffect(() => {
+    if (!cast) return
+    setReadToEnd(false)
+    const check = () => {
+      if (atBottom()) setReadToEnd(true)
+    }
+    window.addEventListener('scroll', check, { passive: true })
+    window.addEventListener('resize', check)
+    const raf = requestAnimationFrame(() => requestAnimationFrame(check))
+    return () => {
+      window.removeEventListener('scroll', check)
+      window.removeEventListener('resize', check)
+      cancelAnimationFrame(raf)
+    }
+  }, [cast, shown])
+
+  const party = vote ? PARTIES.find((p) => p.id === vote.partyId) : null
+  const cand = party?.candidates.find((c) => c.id === vote.candidateId)
+
+  const onButton = () => {
+    if (done) {
+      window.location.assign(window.location.pathname)
+    } else if (!cast) {
+      const run = runsSoFar() + 1
+      recordRun(run)
+      setLayout(layoutFor(vote, run))
+      setShown(1)
+    } else {
+      setShown((n) => n + 1)
+    }
+  }
+
+  const gated = cast && !readToEnd
+
+  return (
+    <main className="page">
+      <h1>Try a different way to vote</h1>
+      <p className="lede">
+        You and 99 neighbors are voting for your representative to the state legislature.
+      </p>
+
+      {cast ? (
+        <p className="receipt">
+          You voted for <Cand c={cand} p={party} />, <Party p={party} long />.
+        </p>
+      ) : (
+        <Ballot vote={vote} onChange={setVote} />
+      )}
+
+      {shownSections.map(({ section, phase }, i) => (
+        <section
+          key={section.id}
+          className="sec"
+          ref={(el) => {
+            refs.current[i] = el
+          }}
+        >
+          <h2>{section.title}</h2>
+          {section.body(phase)}
+        </section>
+      ))}
+
+      <div className="bar">
+        <button type="button" className="btn" disabled={!cand || gated} onClick={onButton}>
+          {!cast ? (
+            cand ? (
+              `Cast my vote: ${cand.name}`
+            ) : (
+              'Cast my vote'
+            )
+          ) : gated ? (
+            <>
+              <ArrowDown size={20} aria-hidden="true" /> Keep reading
+            </>
+          ) : done ? (
+            'Start over'
+          ) : (
+            'Next'
+          )}
+        </button>
+      </div>
+    </main>
+  )
 }

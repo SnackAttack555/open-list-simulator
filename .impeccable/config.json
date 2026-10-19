@@ -1,0 +1,89 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "cream-palette",
+        "value": "*",
+        "files": [
+          "variants/districts-a.html"
+        ],
+        "createdAt": "2026-10-10T21:58:31.840Z",
+        "reason": "project brief: .impeccable.md pins warm paper and dark ink as the page surface; the variants reuse the app's own tokens"
+      },
+      {
+        "rule": "cream-palette",
+        "value": "*",
+        "files": [
+          "variants/index.html"
+        ],
+        "createdAt": "2026-10-10T21:58:31.854Z",
+        "reason": "project brief: .impeccable.md pins warm paper and dark ink as the page surface; the variants reuse the app's own tokens"
+      },
+      {
+        "rule": "cream-palette",
+        "value": "*",
+        "files": [
+          "variants/districts-b.html"
+        ],
+        "createdAt": "2026-10-10T22:08:07.034Z",
+        "reason": "project brief: .impeccable.md pins warm paper and dark ink as the page surface"
+      },
+      {
+        "rule": "border-accent-on-rounded",
+        "value": "*",
+        "files": [
+          "variants/districts-b.html"
+        ],
+        "createdAt": "2026-10-10T22:08:07.050Z",
+        "reason": "legend line swatch: a 2px border-top with 1px radius drawing a line sample, not a card accent"
+      },
+      {
+        "rule": "cream-palette",
+        "value": "*",
+        "files": [
+          "variants/districts2-a.html"
+        ],
+        "createdAt": "2026-10-10T22:56:26.115Z",
+        "reason": "project brief: .impeccable.md pins warm paper and dark ink as the page surface"
+      },
+      {
+        "rule": "cream-palette",
+        "value": "*",
+        "files": [
+          "variants/districts2-b.html"
+        ],
+        "createdAt": "2026-10-10T22:56:26.129Z",
+        "reason": "project brief: .impeccable.md pins warm paper and dark ink as the page surface"
+      },
+      {
+        "rule": "cream-palette",
+        "value": "*",
+        "files": [
+          "variants/districts2-c.html"
+        ],
+        "createdAt": "2026-10-10T22:56:26.142Z",
+        "reason": "project brief: .impeccable.md pins warm paper and dark ink as the page surface"
+      },
+      {
+        "rule": "cream-palette",
+        "value": "*",
+        "files": [
+          "variants/index2.html"
+        ],
+        "createdAt": "2026-10-10T22:56:26.155Z",
+        "reason": "project brief: .impeccable.md pins warm paper and dark ink as the page surface"
+      },
+      {
+        "rule": "border-accent-on-rounded",
+        "value": "*",
+        "files": [
+          "variants/districts2-a.html"
+        ],
+        "createdAt": "2026-10-10T22:56:26.168Z",
+        "reason": "legend line swatch: a 2px border-top with 1px radius drawing a line sample, not a card accent"
+      }
+    ]
+  }
+}

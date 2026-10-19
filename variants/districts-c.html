@@ -1,0 +1,462 @@
+<!doctype html>
+<!--
+  Candidate C for the "One bigger district." figure: THE ANALOGY, SIDE BY SIDE.
+
+  Concept (3 sentences)
+  Two matching pictures, one above the other: "Your state" with its 2 U.S. senators, and
+  "One bigger district" with its 5 state representatives. In both, a ringed dot is you inside a
+  plain territory, and a line runs from every person at the top down to that dot, so the reader
+  sees the second picture is the first picture's idea with 5 instead of 2. The second picture
+  starts as 5 small districts with 1 rep each (only your own rep tied to you); the walls between
+  them dissolve into one shape and then the other 4 lines draw down to you.
+
+  Animation beats (plays once on load, about 2.5s, ease-out expo; reduced motion jumps to end)
+    0.0s  Row 1 is complete from the start (it is the thing the reader already knows).
+          Row 2 shows 5 small districts, 5 reps, and 1 line from your district's rep to you.
+    0.7s  The 5 small districts crossfade into one bigger district (0.8s). The captions
+          "Your 5 districts / 1 rep each" crossfade to "One bigger district / 5 state
+          representatives" in the same window.
+    1.5s  The other 4 lines draw from each rep down to you (1.0s). Done at 2.5s.
+  End state: two rows that mirror each other, fully legible with no motion.
+
+  Porting to React (this codebase)
+    Component: <Districts party={e.parties.find(p => p.mine)} />  (src/components/Districts.jsx)
+      props: party (for the ringed "you" dot colour, passed down as --c like every other picture;
+             the ring itself is var(--ink) as in .dot.me), optional seats (default 5, only if the
+             SEATS constant ever changes; the rep x-positions are computed from it).
+      Add `play` to the figure's className in a useEffect on mount (the section mounts when the
+      reader taps Next, so the animation runs exactly then; StrictMode's double run is harmless
+      because adding a class twice is idempotent). Replay is review-only and is not ported.
+    CSS variables used: --paper, --paper-2, --ink, --ink-2, --line, --c, --sp-2, --sp-5, --body,
+      --ease (the file defines --expo = cubic-bezier(0.16, 1, 0.3, 1) for an exponential ease-out;
+      swap for --ease if the owner prefers one curve across the page).
+    Reuses from styles.css as-is: .figure, .legend, .dot, .dot.me, .dot.on, and the global
+      prefers-reduced-motion rule (that rule is what makes reduced motion jump to the end state).
+    New CSS to move into styles.css: the .districts block below (about 60 lines).
+    Icons: Lucide `user` for senators and reps (they are not yet elected, so they are ink, not
+      party animals). Rendered via one inline <symbol> and <use>; in React just use lucide-react's
+      <User /> with the same size and absoluteStrokeWidth as PartyIcon.
+
+  Things the owner should know
+    - The reader's own dot sits in the same spot in both rows on purpose, so "you" is the same
+      person under both pictures. The territory is a plain rounded rectangle, not a map.
+    - Row 1 never animates; it is the anchor of the analogy. All motion is in row 2 and each
+      beat means something: walls coming down, ties being made.
+    - Without JavaScript the figure renders the end state (the default CSS is the end state; the
+      `play` class only adds the from-keyframes).
+    - "You" is shown as Dogs blue here; in the app it takes the reader's party colour.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Five Seats: districts C</title>
+    <meta name="theme-color" content="#f8f5ef" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Atkinson+Hyperlegible+Next:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* ---------- tokens and page, copied from src/styles.css ---------- */
+      :root {
+        --paper: oklch(0.977 0.012 85);
+        --paper-2: oklch(0.953 0.016 85);
+        --card: oklch(0.995 0.006 85);
+        --ink: oklch(0.25 0.025 55);
+        --ink-2: oklch(0.47 0.022 55);
+        --ink-3: oklch(0.64 0.016 55);
+        --line: oklch(0.87 0.016 80);
+        --line-2: oklch(0.925 0.012 80);
+        --slot: oklch(0.915 0.01 80);
+        --grey: oklch(0.83 0.008 80);
+        --focus: oklch(0.55 0.15 262);
+
+        --sp-1: 4px;
+        --sp-2: 8px;
+        --sp-3: 12px;
+        --sp-4: 16px;
+        --sp-5: 24px;
+        --sp-6: 32px;
+        --sp-7: 48px;
+
+        --display: 'Young Serif', 'Iowan Old Style', Georgia, serif;
+        --body: 'Atkinson Hyperlegible Next', 'Atkinson Hyperlegible', system-ui, sans-serif;
+
+        --ease: cubic-bezier(0.22, 1, 0.36, 1);
+        --expo: cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        -webkit-text-size-adjust: 100%;
+        background: var(--paper);
+      }
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font: 400 1.0625rem / 1.5 var(--body);
+        overflow-x: hidden;
+      }
+      h2,
+      p {
+        margin: 0;
+      }
+      button {
+        font: inherit;
+        color: inherit;
+      }
+      .page {
+        width: 100%;
+        max-width: 440px;
+        min-height: 100dvh;
+        margin: 0 auto;
+        padding: var(--sp-6) var(--sp-4) var(--sp-7);
+        display: flex;
+        flex-direction: column;
+      }
+      .sec {
+        margin-top: var(--sp-7);
+        display: grid;
+        align-content: start;
+        gap: var(--sp-4);
+        animation: fade-up 0.4s var(--ease) both;
+      }
+      .sec h2 {
+        font: 400 1.5rem / 1.2 var(--display);
+        text-wrap: balance;
+      }
+      .sec p {
+        max-width: 38ch;
+      }
+      @media (min-width: 480px) {
+        .page {
+          padding-top: var(--sp-7);
+        }
+      }
+      @keyframes fade-up {
+        from {
+          opacity: 0;
+          transform: translateY(8px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* shared bits from styles.css: .figure, .legend, .dot */
+      .figure {
+        display: grid;
+        gap: var(--sp-2);
+      }
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--sp-1) var(--sp-4);
+        justify-content: flex-end;
+        font-size: 0.8125rem;
+        color: var(--ink-2);
+      }
+      .legend span {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--sp-2);
+      }
+      .legend .dot {
+        width: 11px;
+        animation: none;
+      }
+      .dot {
+        display: block;
+        aspect-ratio: 1;
+        border-radius: 50%;
+        background: var(--slot);
+      }
+      .dot.on {
+        background: var(--c);
+      }
+      .dot.me {
+        position: relative;
+        z-index: 1;
+        outline: 2px solid var(--ink);
+        outline-offset: 1.5px;
+      }
+
+      /* ---------- the figure: two rows that mirror each other ---------- */
+      .districts {
+        margin: 0;
+      }
+      .districts .rows {
+        display: grid;
+        gap: var(--sp-5);
+        margin-block: var(--sp-2) var(--sp-1);
+      }
+      .drow {
+        display: grid;
+        gap: var(--sp-2);
+      }
+      .cap {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: var(--sp-3);
+        font-size: 0.9375rem;
+        line-height: 1.3;
+      }
+      .cap b {
+        font-weight: 700;
+      }
+      .cap .r {
+        color: var(--ink-2);
+        text-align: right;
+      }
+      /* A caption that changes: both versions share one cell and crossfade. */
+      .swap {
+        display: grid;
+      }
+      .swap > span {
+        grid-area: 1 / 1;
+      }
+      .pic {
+        display: block;
+        width: 100%;
+        height: auto;
+        overflow: visible;
+      }
+      .pic .person {
+        color: var(--ink);
+      }
+      .pic .land {
+        fill: var(--paper-2);
+        stroke: var(--line);
+        stroke-width: 1.5;
+      }
+      .pic .tie {
+        stroke: var(--ink-2);
+        stroke-width: 1.5;
+        stroke-linecap: butt;
+        fill: none;
+      }
+      .pic .tie.new {
+        stroke-dasharray: 1;
+        stroke-dashoffset: 0;
+      }
+      .pic .you-gap {
+        fill: var(--paper);
+      }
+      .pic .you-fill {
+        fill: var(--c);
+      }
+      .pic .you-ring {
+        fill: none;
+        stroke: var(--ink);
+        stroke-width: 2;
+      }
+
+      /* End state is the default, so a reader without JS or motion still gets the whole idea.
+         `play` adds the from-keyframes; each beat means one thing. */
+      .walls {
+        opacity: 0;
+      }
+      .big {
+        opacity: 1;
+      }
+      .cap-before {
+        opacity: 0;
+      }
+      .cap-after {
+        opacity: 1;
+      }
+      /* Beat 1 (0.7s): the walls between the small districts come down. */
+      .districts.play .walls {
+        animation: fade-out 0.8s var(--expo) 0.7s both;
+      }
+      .districts.play .big {
+        animation: fade-in 0.8s var(--expo) 0.7s both;
+      }
+      .districts.play .cap-before {
+        animation: fade-out 0.5s var(--expo) 0.8s both;
+      }
+      .districts.play .cap-after {
+        animation: fade-in 0.5s var(--expo) 0.9s both;
+      }
+      /* Beat 2 (1.5s): the other four reps are tied to you. */
+      .districts.play .tie.new {
+        animation: draw 1s var(--expo) 1.5s both;
+      }
+      @keyframes fade-out {
+        from {
+          opacity: 1;
+        }
+        to {
+          opacity: 0;
+        }
+      }
+      @keyframes fade-in {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+      @keyframes draw {
+        from {
+          stroke-dashoffset: 1;
+        }
+        to {
+          stroke-dashoffset: 0;
+        }
+      }
+
+      /* review-only */
+      .replay {
+        justify-self: start;
+        margin-top: var(--sp-2);
+        padding: 0;
+        border: 0;
+        background: none;
+        color: var(--ink-2);
+        font-size: 0.8125rem;
+        text-decoration: underline;
+        text-underline-offset: 3px;
+        cursor: pointer;
+      }
+      .replay:focus-visible {
+        outline: 3px solid var(--focus);
+        outline-offset: 2px;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.01ms !important;
+          animation-delay: 0ms !important;
+          transition-duration: 0.01ms !important;
+          scroll-behavior: auto !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true" focusable="false">
+      <defs>
+        <!-- Lucide `user` -->
+        <symbol
+          id="i-user"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+          <circle cx="12" cy="7" r="4" />
+        </symbol>
+      </defs>
+    </svg>
+
+    <main class="page">
+      <section class="sec">
+        <h2>One bigger district.</h2>
+        <p>
+          Now imagine your neighborhood district is combined with other nearby districts. Just
+          like you have 2 U.S. senators, you'd have 5 state representatives and each will
+          represent you all.
+        </p>
+
+        <figure class="districts figure" id="fig" style="--c: oklch(0.5 0.16 262)">
+          <div
+            class="rows"
+            role="img"
+            aria-label="Two matching pictures. Your state has 2 U.S. senators, and a line ties each one to you. Five small districts, one of them yours, combine into one bigger district with 5 state representatives, and a line ties each of the 5 to you the same way."
+          >
+            <!-- Row 1: what the reader already knows. Never animates. -->
+            <div class="drow">
+              <p class="cap">
+                <b>Your state</b>
+                <span class="r">2 U.S. senators</span>
+              </p>
+              <svg class="pic" viewBox="0 0 360 110" aria-hidden="true" focusable="false">
+                <rect class="land" x="20" y="46" width="320" height="62" rx="10" />
+                <g class="person">
+                  <use href="#i-user" x="136" y="2" width="28" height="28" />
+                  <use href="#i-user" x="196" y="2" width="28" height="28" />
+                </g>
+                <line class="tie" x1="150" y1="32" x2="115" y2="77" />
+                <line class="tie" x1="210" y1="32" x2="115" y2="77" />
+                <circle class="you-gap" cx="115" cy="77" r="8" />
+                <circle class="you-fill" cx="115" cy="77" r="5.5" />
+                <circle class="you-ring" cx="115" cy="77" r="8.5" />
+              </svg>
+            </div>
+
+            <!-- Row 2: five districts become one, then every rep is tied to you. -->
+            <div class="drow">
+              <p class="cap">
+                <b class="swap">
+                  <span class="cap-before">Your 5 districts</span>
+                  <span class="cap-after">One bigger district</span>
+                </b>
+                <span class="r swap">
+                  <span class="cap-before">1 rep each</span>
+                  <span class="cap-after">5 state representatives</span>
+                </span>
+              </p>
+              <svg class="pic" viewBox="0 0 360 110" aria-hidden="true" focusable="false">
+                <rect class="land big" x="20" y="46" width="320" height="62" rx="10" />
+                <g class="walls">
+                  <rect class="land" x="20" y="46" width="60" height="62" rx="8" />
+                  <rect class="land" x="85" y="46" width="60" height="62" rx="8" />
+                  <rect class="land" x="150" y="46" width="60" height="62" rx="8" />
+                  <rect class="land" x="215" y="46" width="60" height="62" rx="8" />
+                  <rect class="land" x="280" y="46" width="60" height="62" rx="8" />
+                </g>
+                <g class="person">
+                  <use href="#i-user" x="36" y="2" width="28" height="28" />
+                  <use href="#i-user" x="101" y="2" width="28" height="28" />
+                  <use href="#i-user" x="166" y="2" width="28" height="28" />
+                  <use href="#i-user" x="231" y="2" width="28" height="28" />
+                  <use href="#i-user" x="296" y="2" width="28" height="28" />
+                </g>
+                <!-- your own district's rep was already yours -->
+                <line class="tie" x1="115" y1="32" x2="115" y2="77" />
+                <line class="tie new" pathLength="1" x1="50" y1="32" x2="115" y2="77" />
+                <line class="tie new" pathLength="1" x1="180" y1="32" x2="115" y2="77" />
+                <line class="tie new" pathLength="1" x1="245" y1="32" x2="115" y2="77" />
+                <line class="tie new" pathLength="1" x1="310" y1="32" x2="115" y2="77" />
+                <circle class="you-gap" cx="115" cy="77" r="8" />
+                <circle class="you-fill" cx="115" cy="77" r="5.5" />
+                <circle class="you-ring" cx="115" cy="77" r="8.5" />
+              </svg>
+            </div>
+          </div>
+          <p class="legend">
+            <span><i class="dot me on" aria-hidden="true"></i> you</span>
+          </p>
+        </figure>
+
+        <button type="button" class="replay" id="replay">Replay</button>
+      </section>
+    </main>
+
+    <script>
+      ;(function () {
+        var fig = document.getElementById('fig')
+        function play() {
+          fig.classList.remove('play')
+          void fig.offsetWidth
+          fig.classList.add('play')
+        }
+        play()
+        document.getElementById('replay').addEventListener('click', play)
+      })()
+    </script>
+  </body>
+</html>

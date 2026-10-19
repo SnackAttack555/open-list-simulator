@@ -1,0 +1,582 @@
+/* Five Seats. Warm paper, dark ink, and four party colours that do all the talking. */
+
+:root {
+  --paper: oklch(0.977 0.012 85);
+  --paper-2: oklch(0.953 0.016 85);
+  --card: oklch(0.995 0.006 85);
+  --ink: oklch(0.25 0.025 55);
+  --ink-2: oklch(0.47 0.022 55);
+  --ink-3: oklch(0.64 0.016 55);
+  --line: oklch(0.87 0.016 80);
+  --line-2: oklch(0.925 0.012 80);
+  --slot: oklch(0.915 0.01 80);
+  --grey: oklch(0.83 0.008 80);
+  --focus: oklch(0.55 0.15 262);
+
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+
+  --display: 'Young Serif', 'Iowan Old Style', Georgia, serif;
+  --body: 'Atkinson Hyperlegible Next', 'Atkinson Hyperlegible', system-ui, sans-serif;
+
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  background: var(--paper);
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: 400 1.0625rem / 1.5 var(--body);
+  overflow-x: hidden;
+}
+
+h1,
+h2,
+p,
+ol,
+ul {
+  margin: 0;
+}
+
+ol,
+ul {
+  padding: 0;
+  list-style: none;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+/* ---------- the page ---------- */
+
+.page {
+  width: 100%;
+  max-width: 440px;
+  min-height: 100dvh;
+  margin: 0 auto;
+  padding: var(--sp-6) var(--sp-4) 0;
+  display: flex;
+  flex-direction: column;
+}
+
+h1 {
+  font: 400 1.875rem / 1.12 var(--display);
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+.lede {
+  margin-top: var(--sp-4);
+  max-width: 36ch;
+}
+
+.receipt {
+  margin-top: var(--sp-5);
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--card);
+}
+
+.sec {
+  margin-top: var(--sp-7);
+  scroll-margin-top: var(--sp-5);
+  display: grid;
+  align-content: start;
+  gap: var(--sp-4);
+  animation: fade-up 0.4s var(--ease) both;
+}
+/* A line of text revealed by Next inside a section. A `late` one waits for the
+   picture above it to finish animating (`--late`, set by the section). */
+.part {
+  animation: fade-up 0.4s var(--ease) both;
+}
+.part.late {
+  animation-delay: var(--late, 0ms);
+}
+/* The newest section gets a full screen of room, so its heading can always be
+   scrolled to the top of the viewport. The sticky bar is 102px tall. */
+.sec:last-of-type {
+  min-height: calc(100dvh - 102px - var(--sp-5));
+}
+.sec h2 {
+  font: 400 1.5rem / 1.2 var(--display);
+  text-wrap: balance;
+}
+.sec p {
+  max-width: 38ch;
+}
+
+@media (min-width: 480px) {
+  h1 {
+    font-size: 2.25rem;
+  }
+  .page {
+    padding-top: var(--sp-7);
+  }
+}
+
+/* ---------- the one button ---------- */
+
+.bar {
+  position: sticky;
+  bottom: 0;
+  margin-top: auto;
+  margin-inline: calc(-1 * var(--sp-4));
+  padding: var(--sp-4) var(--sp-4) calc(var(--sp-4) + env(safe-area-inset-bottom));
+  background: color-mix(in oklch, var(--paper) 90%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.sec ~ .bar {
+  padding-top: var(--sp-6);
+}
+
+.btn {
+  appearance: none;
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  border: 0;
+  min-height: 54px;
+  padding: 0 var(--sp-5);
+  border-radius: 14px;
+  background: var(--ink);
+  color: var(--paper);
+  font-weight: 700;
+  line-height: 1.2;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    transform 0.15s var(--ease),
+    background-color 0.15s,
+    color 0.15s;
+}
+.btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+.btn:disabled {
+  background: var(--line-2);
+  color: var(--ink-3);
+  cursor: default;
+}
+.btn:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* ---------- shared bits ---------- */
+
+.pn {
+  font-weight: 700;
+}
+
+.tag {
+  display: inline-block;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  line-height: 1;
+  padding: 4px 6px;
+  border-radius: 5px;
+  background: var(--ink);
+  color: var(--paper);
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ---------- ballot ---------- */
+
+.ballot {
+  margin-top: var(--sp-5);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  box-shadow:
+    0 1px 0 var(--line-2),
+    0 16px 32px -24px oklch(0.3 0.03 60 / 0.4);
+}
+/* The instruction line across the top of the sheet, as on a real ballot. */
+.instruction {
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--line);
+  background: var(--paper-2);
+  border-radius: 6px 6px 0 0;
+  font-weight: 700;
+  font-size: 0.9375rem;
+  line-height: 1.3;
+}
+.columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+.column {
+  padding: var(--sp-2) var(--sp-1) var(--sp-2);
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+.column:nth-child(2n) {
+  border-right: 0;
+}
+.column:nth-last-child(-n + 2) {
+  border-bottom: 0;
+}
+.column-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin: 0 var(--sp-2) var(--sp-1);
+  padding: var(--sp-2) 0 6px;
+  border-bottom: 2px solid var(--c);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--t);
+}
+.column-head svg {
+  color: var(--c);
+}
+.cand {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: 44px;
+  padding: 0 var(--sp-2);
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  text-align: left;
+  font-size: 0.9375rem;
+  line-height: 1.2;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.15s;
+}
+.cand:hover {
+  background: var(--paper-2);
+}
+.cand:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: -3px;
+}
+.cand[aria-checked='true'] {
+  background: color-mix(in oklch, var(--c) 14%, transparent);
+}
+.oval {
+  width: 22px;
+  height: 14px;
+  flex: none;
+  border: 1.5px solid var(--ink-2);
+  border-radius: 50%;
+  transition:
+    background-color 0.15s,
+    border-color 0.15s;
+}
+.cand[aria-checked='true'] .oval {
+  background: var(--ink);
+  border-color: var(--ink);
+}
+.cand[aria-checked='true'] .cand-name {
+  font-weight: 700;
+}
+
+/* ---------- votes as dots ---------- */
+
+.figure {
+  display: grid;
+  gap: var(--sp-2);
+}
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1) var(--sp-4);
+  justify-content: flex-end;
+  font-size: 0.8125rem;
+  color: var(--ink-2);
+}
+.legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.legend .dot {
+  width: 11px;
+  animation: none;
+}
+.legend .dot.off {
+  background: var(--grey);
+}
+
+.dots {
+  display: grid;
+  gap: var(--sp-4);
+  margin-block: var(--sp-2);
+}
+.pv {
+  display: grid;
+  gap: 5px;
+}
+.pv-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-bottom: 2px;
+  font-size: 0.9375rem;
+}
+.pv-head svg {
+  color: var(--c);
+}
+.pv-head .n {
+  margin-left: auto;
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+.group {
+  display: grid;
+  grid-template-columns: 1fr 26px;
+  gap: var(--sp-2);
+  align-items: center;
+  transition: opacity 0.6s var(--ease);
+  transition-delay: var(--d, 0ms);
+}
+.group.lost {
+  opacity: 0.4;
+}
+.row {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(var(--q, 20), 1fr);
+  gap: 3px;
+  padding: 4px 5px;
+}
+/* The ring around a row that earns a seat. It draws in from the left, like a
+   pen circling the group, when the group's class flips to `lit`. */
+.row::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  border: 2px solid var(--c);
+  opacity: 0;
+  transform-origin: left center;
+}
+.group.lit .row::before {
+  animation: ring-in 0.6s var(--ease) both;
+  animation-delay: var(--d, 0ms);
+}
+.group.partial .row::before {
+  border-style: dashed;
+}
+@keyframes ring-in {
+  from {
+    opacity: 0;
+    transform: scaleX(0.84);
+  }
+  to {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+.dot {
+  display: block;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--slot);
+}
+.dot.on {
+  background: var(--c);
+  animation: pop 0.35s var(--ease) both;
+  animation-delay: calc(var(--i) * 8ms);
+}
+.dot.me {
+  position: relative;
+  z-index: 1;
+  outline: 2px solid var(--ink);
+  outline-offset: 1.5px;
+}
+.tail {
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+}
+.tail svg {
+  color: var(--c);
+  animation: pop 0.4s var(--ease) both;
+  animation-delay: calc(var(--d, 0ms) + 280ms);
+}
+
+/* ---------- five districts becoming one ---------- */
+
+.districts {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.districts .box,
+.districts .fences line {
+  fill: none;
+  stroke: var(--ink-3);
+  stroke-width: 1.5;
+}
+.districts .ring {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 2;
+}
+.districts .link {
+  fill: none;
+  stroke: var(--ink-2);
+  stroke-width: 1.75;
+  stroke-linecap: round;
+}
+.districts .seat {
+  fill: var(--grey);
+}
+/* legend entries come and go with the picture; `.legend span` must not outrank `hidden` */
+.legend span[hidden] {
+  display: none;
+}
+.legend .line-swatch {
+  display: block;
+  width: 18px;
+  height: 0;
+  border-top: 2px solid var(--ink-2);
+  border-radius: 1px;
+}
+
+/* ---------- candidates inside one party ---------- */
+
+.plist {
+  display: grid;
+  gap: 2px;
+  margin-block: var(--sp-1);
+}
+.plist-row {
+  display: grid;
+  grid-template-columns: 26px 1fr auto;
+  align-items: center;
+  gap: var(--sp-3);
+  min-height: 46px;
+  padding: 0 var(--sp-2);
+  border-radius: 10px;
+}
+.plist-row.won {
+  background: color-mix(in oklch, var(--c) 10%, transparent);
+  font-weight: 700;
+}
+.plist-seat {
+  display: grid;
+  place-items: center;
+}
+.plist-seat svg {
+  color: var(--c);
+}
+.plist-name {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.plist-n {
+  color: var(--ink-2);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- the council ---------- */
+
+.seats {
+  margin-block: var(--sp-2);
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: var(--sp-2);
+  align-items: start;
+}
+.seat {
+  display: grid;
+  justify-items: center;
+  gap: 5px;
+  text-align: center;
+  min-width: 0;
+}
+.seat svg {
+  color: var(--c);
+}
+.seat-name {
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.seat .tag {
+  font-size: 0.5625rem;
+  padding: 3px 4px;
+}
+
+/* ---------- the greyed-out voters ---------- */
+
+.mini {
+  display: grid;
+  grid-template-columns: repeat(20, 1fr);
+  gap: 3px;
+  margin-block: var(--sp-1);
+}
+.mini .dot {
+  background: var(--c);
+}
+.mini .dot.off {
+  background: var(--grey);
+}
+
+/* ---------- motion preference ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -2,10 +2,10 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "dev",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
-      "port": 5173
+      "//": "Attach-only. The preview launcher cannot spawn a shell under Dropbox CloudStorage, so start the server first: npx vite --port 5181 --strictPort  (the old simulator usually holds 5180)",
+      "name": "five-seats-dev",
+      "url": "http://localhost:5181",
+      "port": 5181
     }
   ]
 }

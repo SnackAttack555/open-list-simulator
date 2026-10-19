@@ -1,0 +1,472 @@
+<!doctype html>
+<!--
+  Candidate A: THE MAP
+
+  Concept (3 sentences)
+  Five neighboring districts are drawn as tiles on a small abstract map, each with the one
+  Cat it elected, and your ringed dot sits in one of them with a short line to the one
+  person who speaks for you. The lines between the tiles dissolve, the five single-district
+  Cats go with them (the old lines stay as a faint trace), and the outline firms up into one
+  bigger district. Five empty seats
+  appear under it and a line draws from your dot to every one of them: five people, and all
+  five are yours (the next section fills the seats).
+
+  Porting into the codebase
+  - New component `src/components/Districts.jsx`, rendered by the new section in
+    `sections.jsx` right after the paragraph. Props: `me` (the reader's party, for the
+    ringed dot's colour: `e.me.party`), `winner` (the party that took every small district,
+    `e.wta.council[0].party`, Cats), `seats` (SEATS, 5). Optional `playKey` to restart the
+    animation; otherwise it plays once on mount via CSS `animation ... both`, exactly like
+    `.group.lit` in VoteDots.
+  - Icons: inside the SVG, `<PartyIcon party={winner} size={28} x={..} y={..} />` works as a
+    nested svg (lucide-react passes x/y through). Empty seats are Lucide `Armchair`.
+  - CSS it needs from styles.css: --paper-2, --ink, --ink-2, --ink-3, --line, --c, --ease,
+    and the existing `pop` keyframes. New rules (about 40 lines, below under "the map")
+    would go in styles.css next to the council block: .map, .map-tiles, .map-border,
+    .map-outline, .map-rep, .map-tie, .map-seat, .map-spoke, plus `dissolve`, `firm`
+    and `draw` keyframes. The dot and legend reuse `.dot.me` and `.legend` / YouLegend
+    (pass it the reader's party; here the label reads "you" rather than "your vote"
+    because the dot stands for the person, not the ballot).
+  - The reduced-motion block in styles.css already zeroes animation durations, so the
+    end state is what a reduced-motion reader sees.
+
+  Things to know
+  - It assumes every small district elected a Cat, which is the page's existing sweep story
+    (37 percent beats everyone in every district). Swap the five `use` elements if you
+    would rather show a mix.
+  - The five seats are left empty on purpose so the next section's Council (2 / 1 / 1 / 1)
+    is the reveal that fills them. Drawing the 2 / 1 / 1 / 1 animals here would spoil it;
+    drawing five Cats would say nothing changes.
+  - Timing: 0.7s hold on the five tiles; 0.7 to 1.4s the inside borders fade to a trace and
+    the five Cats and your one tie line fade out; 0.8 to 1.6s the outline firms from ink-2
+    2px to ink 3px; 1.55 to 2.0s the five seats pop in (with the "a seat" legend key);
+    1.95 to 2.85s the five spokes draw from your dot, 90ms apart. About 2.9s total, every
+    curve an exponential ease-out (cubic-bezier(0.16, 1, 0.3, 1)). Reduced motion jumps
+    straight to the end picture.
+  - No real place, no text in the picture; the only words are the legend.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>One bigger district (map)</title>
+    <meta name="theme-color" content="#f8f5ef" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Atkinson+Hyperlegible+Next:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* ---------- tokens, copied from src/styles.css ---------- */
+      :root {
+        --paper: oklch(0.977 0.012 85);
+        --paper-2: oklch(0.953 0.016 85);
+        --card: oklch(0.995 0.006 85);
+        --ink: oklch(0.25 0.025 55);
+        --ink-2: oklch(0.47 0.022 55);
+        --ink-3: oklch(0.64 0.016 55);
+        --line: oklch(0.87 0.016 80);
+        --line-2: oklch(0.925 0.012 80);
+        --slot: oklch(0.915 0.01 80);
+        --grey: oklch(0.83 0.008 80);
+        --focus: oklch(0.55 0.15 262);
+
+        --sp-1: 4px;
+        --sp-2: 8px;
+        --sp-3: 12px;
+        --sp-4: 16px;
+        --sp-5: 24px;
+        --sp-6: 32px;
+        --sp-7: 48px;
+
+        --display: 'Young Serif', 'Iowan Old Style', Georgia, serif;
+        --body: 'Atkinson Hyperlegible Next', 'Atkinson Hyperlegible', system-ui, sans-serif;
+
+        --ease: cubic-bezier(0.22, 1, 0.36, 1);
+        --expo: cubic-bezier(0.16, 1, 0.3, 1);
+
+        /* the two parties this figure draws */
+        --cats: oklch(0.63 0.18 45);
+        --dogs: oklch(0.5 0.16 262);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        -webkit-text-size-adjust: 100%;
+        background: var(--paper);
+      }
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font: 400 1.0625rem / 1.5 var(--body);
+        overflow-x: hidden;
+      }
+      h2,
+      p {
+        margin: 0;
+      }
+      button {
+        font: inherit;
+        color: inherit;
+      }
+
+      /* ---------- the page column, as in the app ---------- */
+      .page {
+        width: 100%;
+        max-width: 440px;
+        min-height: 100dvh;
+        margin: 0 auto;
+        padding: var(--sp-6) var(--sp-4) var(--sp-7);
+        display: flex;
+        flex-direction: column;
+      }
+      @media (min-width: 480px) {
+        .page {
+          padding-top: var(--sp-7);
+        }
+      }
+      .sec {
+        display: grid;
+        align-content: start;
+        gap: var(--sp-4);
+      }
+      .sec h2 {
+        font: 400 1.5rem / 1.2 var(--display);
+        text-wrap: balance;
+      }
+      .sec p {
+        max-width: 38ch;
+      }
+
+      /* ---------- shared bits from styles.css ---------- */
+      .figure {
+        display: grid;
+        gap: var(--sp-2);
+      }
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--sp-1) var(--sp-4);
+        justify-content: flex-end;
+        font-size: 0.8125rem;
+        color: var(--ink-2);
+      }
+      .legend span {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--sp-2);
+      }
+      .legend .dot {
+        width: 11px;
+      }
+      .legend svg {
+        color: var(--ink-3);
+      }
+      /* the seat key arrives with the seats it explains */
+      .legend .key-seat {
+        animation: appear 0.45s var(--expo) 1.55s both;
+      }
+      @keyframes appear {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+      .dot {
+        display: block;
+        aspect-ratio: 1;
+        border-radius: 50%;
+        background: var(--c);
+      }
+      .dot.me {
+        position: relative;
+        z-index: 1;
+        outline: 2px solid var(--ink);
+        outline-offset: 1.5px;
+      }
+      @keyframes pop {
+        from {
+          opacity: 0;
+          transform: scale(0.4);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+
+      /* ---------- the map ---------- */
+      .map {
+        display: block;
+        width: 100%;
+        height: auto;
+        margin-block: var(--sp-1);
+        overflow: visible;
+      }
+      /* the land: one tinted sheet; the tiles are only lines drawn on it */
+      .map-land {
+        fill: var(--paper-2);
+      }
+      /* the lines between the five small districts; they fade to a trace, not to nothing */
+      .map-border {
+        fill: none;
+        stroke: var(--ink-2);
+        stroke-width: 2;
+        stroke-linecap: round;
+        animation: ghost 0.7s var(--expo) 0.7s both;
+      }
+      /* the edge of the whole area: it firms up as the inside borders go */
+      .map-outline {
+        fill: none;
+        stroke: var(--ink-2);
+        stroke-width: 2;
+        animation: firm 0.8s var(--expo) 0.8s both;
+      }
+      /* the Cat each small district elected, and the one line from you to yours */
+      .map-rep {
+        color: var(--cats);
+        animation: dissolve 0.6s var(--expo) 0.7s both;
+      }
+      .map-tie {
+        stroke: var(--ink);
+        stroke-width: 1.5;
+        stroke-linecap: round;
+        animation: dissolve 0.6s var(--expo) 0.7s both;
+      }
+      /* you: the page's ringed dot, drawn in your party's colour */
+      .map-me {
+        fill: var(--dogs);
+      }
+      .map-ring {
+        fill: none;
+        stroke: var(--ink);
+        stroke-width: 2;
+      }
+      /* the five seats of the bigger district, empty until the next section fills them */
+      .map-seat {
+        color: var(--ink-3);
+        transform-box: fill-box;
+        transform-origin: center;
+        animation: pop 0.45s var(--expo) 1.55s both;
+      }
+      /* one line from you to each seat, drawn in one after another */
+      .map-spoke {
+        stroke: var(--ink);
+        stroke-width: 1.5;
+        stroke-linecap: round;
+        stroke-dasharray: var(--len);
+        stroke-dashoffset: var(--len);
+        animation: draw 0.55s var(--expo) both;
+        animation-delay: calc(1.95s + var(--i) * 0.09s);
+      }
+      @keyframes dissolve {
+        to {
+          opacity: 0;
+        }
+      }
+      /* the old borders stay as a faint trace, so the still picture says "this was five" */
+      @keyframes ghost {
+        to {
+          opacity: 0.28;
+        }
+      }
+      @keyframes firm {
+        from {
+          stroke: var(--ink-2);
+          stroke-width: 2;
+        }
+        to {
+          stroke: var(--ink);
+          stroke-width: 3;
+        }
+      }
+      @keyframes draw {
+        from {
+          stroke-dashoffset: var(--len);
+        }
+        to {
+          stroke-dashoffset: 0;
+        }
+      }
+
+      /* ---------- review only ---------- */
+      .replay {
+        appearance: none;
+        justify-self: start;
+        margin-top: var(--sp-5);
+        padding: 0;
+        border: 0;
+        background: none;
+        color: var(--ink-2);
+        font-size: 0.9375rem;
+        text-decoration: underline;
+        text-underline-offset: 3px;
+        cursor: pointer;
+      }
+      .replay:focus-visible {
+        outline: 3px solid var(--focus);
+        outline-offset: 2px;
+        border-radius: 4px;
+      }
+
+      /* ---------- motion preference ---------- */
+      @media (prefers-reduced-motion: reduce) {
+        .figure * {
+          animation-duration: 0.01ms !important;
+          animation-delay: 0ms !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="sec">
+        <h2>One bigger district.</h2>
+        <p>
+          Now imagine your neighborhood district is combined with other nearby districts. Just
+          like you have 2 U.S. senators, you'd have 5 state representatives and each will
+          represent you all.
+        </p>
+
+        <div class="figure" id="figure">
+          <svg
+            id="map"
+            class="map"
+            viewBox="0 0 340 262"
+            role="img"
+            aria-label="Five small neighboring districts, each with the one Cat it elected, and your dot in one of them with a line to your one representative. The borders between the districts dissolve into one bigger district with five seats, and a line connects you to every one of the five seats."
+          >
+            <defs>
+              <!-- Lucide cat, 24 box, drawn at 28px: stroke 2.25 * 24 / 28 -->
+              <g
+                id="i-cat"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.93"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path
+                  d="M12 5c.67 0 1.35.09 2 .26 1.78-2 5.03-2.84 6.42-2.26 1.4.58-.42 7-.42 7 .57 1.07 1 2.24 1 3.44C21 17.9 16.97 21 12 21s-9-3-9-7.56c0-1.25.5-2.4 1-3.44 0 0-1.89-6.42-.5-7 1.39-.58 4.72.23 6.5 2.23A9.04 9.04 0 0 1 12 5Z"
+                />
+                <path d="M8 14v.5" />
+                <path d="M16 14v.5" />
+                <path d="M11.25 16.25h1.5L12 17l-.75-.75Z" />
+              </g>
+              <!-- Lucide armchair, 24 box, drawn at 36px: stroke 2.25 * 24 / 36 -->
+              <g
+                id="i-seat"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M19 9V6a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v3" />
+                <path
+                  d="M3 16a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5a2 2 0 0 0-4 0v1.5a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5V11a2 2 0 0 0-4 0z"
+                />
+                <path d="M5 18v2" />
+                <path d="M19 18v2" />
+              </g>
+            </defs>
+
+            <!-- the land -->
+            <rect class="map-land" x="6" y="6" width="328" height="180" rx="14" />
+
+            <!-- the borders between the five small districts -->
+            <g class="map-border">
+              <path d="M6 98 H334" />
+              <path d="M178 6 V98" />
+              <path d="M112 98 V186" />
+              <path d="M222 98 V186" />
+            </g>
+
+            <!-- the edge of the whole area -->
+            <rect class="map-outline" x="6" y="6" width="328" height="180" rx="14" />
+
+            <!-- lines from you to each of the five seats (drawn under the dot) -->
+            <g>
+              <line class="map-spoke" style="--i: 0; --len: 105" x1="132.3" y1="167.2" x2="42" y2="219" />
+              <line class="map-spoke" style="--i: 1; --len: 57" x1="135.9" y1="171.2" x2="106" y2="219" />
+              <line class="map-spoke" style="--i: 2; --len: 53" x1="147.1" y1="171.8" x2="170" y2="219" />
+              <line class="map-spoke" style="--i: 3; --len: 98" x1="151.5" y1="167.6" x2="234" y2="219" />
+              <line class="map-spoke" style="--i: 4; --len: 156" x1="152.4" y1="165.6" x2="298" y2="219" />
+            </g>
+
+            <!-- the one Cat each small district elected -->
+            <g class="map-rep">
+              <use href="#i-cat" transform="translate(78 38) scale(1.1667)" />
+              <use href="#i-cat" transform="translate(242 38) scale(1.1667)" />
+              <use href="#i-cat" transform="translate(45 128) scale(1.1667)" />
+              <use href="#i-cat" transform="translate(172 110) scale(1.1667)" />
+              <use href="#i-cat" transform="translate(264 128) scale(1.1667)" />
+            </g>
+            <!-- the one line from you to your one representative -->
+            <line class="map-tie" x1="150.3" y1="154.8" x2="171" y2="137" />
+
+            <!-- you -->
+            <circle class="map-me" cx="142" cy="162" r="5.5" />
+            <circle class="map-ring" cx="142" cy="162" r="8.5" />
+
+            <!-- the five seats of the bigger district -->
+            <g class="map-seat"><use href="#i-seat" transform="translate(24 218) scale(1.5)" /></g>
+            <g class="map-seat"><use href="#i-seat" transform="translate(88 218) scale(1.5)" /></g>
+            <g class="map-seat"><use href="#i-seat" transform="translate(152 218) scale(1.5)" /></g>
+            <g class="map-seat"><use href="#i-seat" transform="translate(216 218) scale(1.5)" /></g>
+            <g class="map-seat"><use href="#i-seat" transform="translate(280 218) scale(1.5)" /></g>
+          </svg>
+
+          <p class="legend" style="--c: var(--dogs)">
+            <span><i class="dot me" aria-hidden="true"></i> you</span>
+            <span class="key-seat">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.25"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M19 9V6a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v3" />
+                <path
+                  d="M3 16a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5a2 2 0 0 0-4 0v1.5a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5V11a2 2 0 0 0-4 0z"
+                />
+                <path d="M5 18v2" />
+                <path d="M19 18v2" />
+              </svg>
+              a seat
+            </span>
+          </p>
+        </div>
+
+        <button class="replay" type="button" id="replay">Replay</button>
+      </section>
+    </main>
+
+    <script>
+      // Review only: restart every animation in the figure from the beginning.
+      document.getElementById('replay').addEventListener('click', function () {
+        var map = document.getElementById('figure')
+        if (map.getAnimations) {
+          map.getAnimations({ subtree: true }).forEach(function (a) {
+            a.cancel()
+            a.play()
+          })
+        } else {
+          var copy = map.cloneNode(true)
+          map.parentNode.replaceChild(copy, map)
+        }
+      })
+    </script>
+  </body>
+</html>

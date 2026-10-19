@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>District animation, take two</title>
+    <style>
+      :root {
+        --paper: oklch(0.977 0.012 85);
+        --ink: oklch(0.25 0.025 55);
+        --ink-2: oklch(0.47 0.022 55);
+        --line: oklch(0.87 0.016 80);
+      }
+      body {
+        margin: 0;
+        padding: 24px;
+        background: oklch(0.93 0.014 85);
+        color: var(--ink);
+        font: 400 15px/1.5 'Atkinson Hyperlegible Next', system-ui, sans-serif;
+      }
+      h1 {
+        margin: 0 0 4px;
+        font: 400 22px/1.2 'Young Serif', Georgia, serif;
+      }
+      .note {
+        margin: 0 0 20px;
+        color: var(--ink-2);
+      }
+      .row {
+        display: flex;
+        gap: 24px;
+        align-items: flex-start;
+        overflow-x: auto;
+      }
+      figure {
+        margin: 0;
+        flex: none;
+      }
+      figcaption {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: 8px;
+        font-weight: 700;
+      }
+      figcaption a {
+        font-weight: 400;
+        color: var(--ink-2);
+      }
+      iframe {
+        display: block;
+        width: 375px;
+        height: 820px;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: var(--paper);
+      }
+    </style>
+  </head>
+  <body>
+    <h1>One bigger district, take two: three animations</h1>
+    <p class="note">
+      Each frame is a 375px phone. Each has Frame 1 / 2 / 3 buttons to jump to a frame and Replay to
+      watch it again, or open a frame on its own.
+    </p>
+    <div class="row">
+      <figure>
+        <figcaption>A: the people, evolved <a href="/variants/districts2-a.html" target="_blank">open</a></figcaption>
+        <iframe src="/variants/districts2-a.html" title="Variant A: the people, evolved"></iframe>
+      </figure>
+      <figure>
+        <figcaption>B: rows <a href="/variants/districts2-b.html" target="_blank">open</a></figcaption>
+        <iframe src="/variants/districts2-b.html" title="Variant B: rows"></iframe>
+      </figure>
+      <figure>
+        <figcaption>C: the map <a href="/variants/districts2-c.html" target="_blank">open</a></figcaption>
+        <iframe src="/variants/districts2-c.html" title="Variant C: the map"></iframe>
+      </figure>
+    </div>
+  </body>
+</html>
