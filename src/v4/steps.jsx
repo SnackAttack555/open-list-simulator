@@ -6,7 +6,7 @@ import Crowd from './Crowd.jsx'
 
 /**
  * The count as a scroll story: one picture (Crowd) that only ever moves, and
- * eleven cards. Each card names the phase the picture should be in; scrolling a
+ * thirteen cards. Each card names the phase the picture should be in; scrolling a
  * card into the lower-middle of the screen makes it active, and the picture
  * animates to that phase, forwards or backwards. A card narrates the change
  * that happens while it is on screen, never one still to come.
@@ -124,14 +124,24 @@ export function buildStory(e) {
       body: (
         <p>
           Now imagine your five districts were combined into one bigger district with {SEATS}{' '}
-          seats to fill. Just like you have 2 U.S. senators, you’d have {SEATS} state
-          representatives and each will represent you all.
+          seats to fill.
         </p>
       ),
     },
     {
       scene: 'crowd',
       phase: 6,
+      body: (
+        <p>
+          Just like you have 2 U.S. senators, you’d have {SEATS} representatives. In this case
+          we’re talking about state representatives: your state would be divided into these
+          larger districts electing {SEATS} state lawmakers each.
+        </p>
+      ),
+    },
+    {
+      scene: 'crowd',
+      phase: 7,
       title: 'Same votes, counted a different way.',
       body: (
         <p>
@@ -160,7 +170,7 @@ export function buildStory(e) {
     },
     {
       scene: 'crowd',
-      phase: 7,
+      phase: 8,
       body: (
         <p>
           The party with the most votes still wins the most seats. They just can’t shut others
@@ -170,15 +180,24 @@ export function buildStory(e) {
     },
     {
       scene: 'crowd',
-      phase: 8,
+      phase: 9,
       title: 'How the seats were decided.',
       body: (
         <p>
           There are {SEATS} seats and {VOTERS * 5} votes, so each seat ‘costs’ {VOTERS} votes
           (two full bars of dots). {list(fullParties.map((p) => p.short))} each had enough votes
-          for a seat. The last{' '}
-          {leftWinners.length === 1 ? 'seat goes' : `${leftWinners.length} seats go`} to whoever
-          came closest:{' '}
+          for a seat.
+        </p>
+      ),
+    },
+    {
+      scene: 'crowd',
+      phase: 10,
+      title: `${leftWinners.length} remaining ${leftWinners.length === 1 ? 'seat' : 'seats'}`,
+      body: (
+        <p>
+          The last {leftWinners.length === 1 ? 'seat goes' : `${leftWinners.length} seats go`}{' '}
+          to whoever came closest:{' '}
           {leftWinners.map((p, i) => (
             <Fragment key={p.id}>
               {i > 0 && ' and '}
@@ -191,7 +210,7 @@ export function buildStory(e) {
     },
     {
       scene: 'crowd',
-      phase: 9,
+      phase: 11,
       title: `Your party won ${seats(my.seats)}.`,
       body: (
         <>
@@ -219,7 +238,7 @@ export function buildStory(e) {
     },
     {
       scene: 'crowd',
-      phase: 10,
+      phase: 12,
       title: 'Voters choose.',
       body: (
         <p>

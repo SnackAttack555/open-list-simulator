@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { dealDistricts } from '../election.js'
 import { createEngine, lerp } from '../lib/tracks.js'
+import { CircleQuestionMark } from 'lucide-react'
 import PartyIcon from '../components/PartyIcon.jsx'
 
 /**
@@ -18,20 +19,24 @@ import PartyIcon from '../components/PartyIcon.jsx'
  *      twenty and the same animal over it
  *   5  one bigger district: the five districts become one, the dots travel
  *      into columns by party (biggest first, twenty to a full column) while
- *      the five winners gather above and turn into five plain seats
- *   6  counted a different way: the seats slide over the columns they belong
+ *      the five winners gather above and turn into five open seats (a
+ *      question mark each: nobody's yet)
+ *   6  (hold) five representatives for everyone
+ *   7  counted a different way: the seats slide over the columns they belong
  *      to and become the matching animals; every hollow dot fills in
- *   7  (hold)
- *   8  how the seats were decided: full columns ring solid, the two tallest
- *      partial columns ring dashed
- *   9  your party's seat: the other columns step back
- *  10  every vote counted: all back to full
+ *   8  (hold)
+ *   9  how the seats were decided: full columns ring solid; the two leftover
+ *      seats go back to question marks, not yet awarded
+ *  10  the last seats: the two tallest partial columns ring dashed and their
+ *      animals come back
+ *  11  your party's seat: the other columns step back
+ *  12  voters choose: all back to full
  *
  * Positions are lerps between fixed spots played by the tracks engine, so
  * every frame runs forwards or mirrored backwards and reduced motion snaps.
  */
 
-export const CROWD_PHASES = 11
+export const CROWD_PHASES = 13
 
 const SEED = 309
 const BACK = 0.35 // opacity of the other parties while one is in focus
@@ -79,6 +84,7 @@ const START = {
   pr: 0, // everyone with a seat is filled in
   ringFull: 0, // solid rings on full columns
   ringLeft: 0, // dashed rings on the leftover winners
+  undo: 0, // the leftover seats back to question marks while the full ones are rung
   focus: 0, // your party's columns alone at full strength
 }
 const STEPS = [
@@ -113,6 +119,7 @@ const STEPS = [
       ['sq', 0, 1, 300, 900],
     ],
   },
+  { dur: 0, tracks: [] },
   {
     dur: 1800,
     tracks: [
@@ -123,10 +130,17 @@ const STEPS = [
   },
   { dur: 0, tracks: [] },
   {
-    dur: 1600,
+    dur: 900,
     tracks: [
       ['ringFull', 0, 1, 0, 700],
-      ['ringLeft', 0, 1, 700, 1600],
+      ['undo', 0, 1, 0, 500],
+    ],
+  },
+  {
+    dur: 1000,
+    tracks: [
+      ['ringLeft', 0, 1, 0, 900],
+      ['undo', 1, 0, 300, 900],
     ],
   },
   { dur: 600, tracks: [['focus', 0, 1, 0, 600]] },
@@ -162,6 +176,7 @@ function buildModel(election) {
     icon: p.icon,
     color: p.color,
     seats: p.seats,
+    fullSeats: p.fullSeats,
     votes: p.votes,
     wonLeftover: p.wonLeftover,
   }))
@@ -289,6 +304,7 @@ function buildModel(election) {
   const seatsPR = parties.flatMap((party) =>
     Array.from({ length: party.seats }, (_, k) => ({
       party,
+      leftover: k >= party.fullSeats,
       x: colCenter(columns[party.firstCol + k]),
     })),
   )
@@ -298,6 +314,7 @@ function buildModel(election) {
     return {
       old: parties[p],
       next: pr?.party ?? null,
+      leftover: pr?.leftover ?? false,
       xT: tiles[i].x + cell / 2,
       xRow: row,
       xSeat: pr ? pr.x : row,
@@ -439,9 +456,12 @@ export default function Crowd({ election, phase = 0 }) {
           `translate(${x} ${ICON_TOP + ICON / 2}) scale(${s}) translate(${-ICON / 2} ${-ICON / 2})`,
         )
         g.setAttribute('opacity', shown)
+        // A leftover seat goes back to its question mark while the full
+        // seats are being rung, and gets its animal again with its ring.
+        const undo = r.leftover ? P.undo : 0
         oldEl.setAttribute('opacity', 1 - P.sq)
-        seatEl.setAttribute('opacity', P.sq * (1 - P.an))
-        if (newEl) newEl.setAttribute('opacity', P.an)
+        seatEl.setAttribute('opacity', Math.min(1, P.sq * (1 - P.an) + undo))
+        if (newEl) newEl.setAttribute('opacity', P.an * (1 - undo))
       })
 
       ringEls.forEach((el, i) => {
@@ -469,7 +489,7 @@ export default function Crowd({ election, phase = 0 }) {
   }, [phase, model])
 
   const { parties, persons, clusters, reps, rings, tiles, meParty } = model
-  const hollowNow = phase >= 1 && phase < 6
+  const hollowNow = phase >= 1 && phase < 7
   const me = parties[meParty].color
   return (
     <div className="figure" ref={root}>
@@ -501,7 +521,7 @@ export default function Crowd({ election, phase = 0 }) {
               y={r.y}
               width={r.w}
               height={r.h}
-              rx={12}
+              rx={10}
               opacity={0}
               strokeDasharray={r.dashed ? '4 4' : undefined}
             />
@@ -543,13 +563,12 @@ export default function Crowd({ election, phase = 0 }) {
                 className="old"
                 style={{ color: r.old.color }}
               />
-              <rect
+              <CircleQuestionMark
+                aria-hidden="true"
+                size={ICON}
+                strokeWidth={2.25}
+                absoluteStrokeWidth
                 className="seat"
-                x={SEAT_INSET}
-                y={SEAT_INSET}
-                width={SEAT}
-                height={SEAT}
-                rx={4}
                 opacity={0}
               />
               {r.next && (
@@ -566,17 +585,12 @@ export default function Crowd({ election, phase = 0 }) {
         </g>
       </svg>
       <p className="legend">
-        {phase >= 3 && (
-          <span>
-            <i className="dot five" aria-hidden="true" /> each dot: about 5 people
-          </span>
-        )}
         {hollowNow && (
           <span>
             <i
               className="dot"
               aria-hidden="true"
-              style={{ background: 'transparent', boxShadow: `inset 0 0 0 2px ${me}` }}
+              style={{ background: 'transparent', boxShadow: 'inset 0 0 0 2px var(--ink-3)' }}
             />{' '}
             no one in the legislature
           </span>
@@ -593,6 +607,11 @@ export default function Crowd({ election, phase = 0 }) {
           />{' '}
           {phase >= 3 ? 'you' : 'your vote'}
         </span>
+        {phase >= 3 && (
+          <span className="line2">
+            <i className="dot five" aria-hidden="true" /> each dot: about 5 people
+          </span>
+        )}
       </p>
     </div>
   )

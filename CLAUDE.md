@@ -24,7 +24,7 @@ node scripts/click-through.mjs [url]          # headless Chrome: real ballot -> 
 ```
 
 Deep link to any state for screenshots or review: `/?v=dogs.toto&n=4` opens the scroll story
-(the front page) with that vote cast and card `n` (1 to 11) on screen; `v` is `party.candidate`.
+(the front page) with that vote cast and card `n` (1 to 13) on screen; `v` is `party.candidate`.
 Add `&run=2` for an unrigged deal. The Next-button page is `/v3.html` with the same `v` and
 `run`; there `n` is how many steps of the count are revealed (1 to 9: wta, district x3, pr, how
 x2, party, end). Deep links can't
@@ -58,15 +58,19 @@ any of it.
 **Two pages share the maths but not the pictures.** `index.html` + `src/v4/` is the front page,
 the scroll story (the folder keeps its working name); `v3.html` + `src/App.jsx` + `sections.jsx`
 is the earlier Next-button page with its several pictures. The scroll story is ONE picture (`src/v4/Crowd.jsx`, a hundred dots that only ever move) pinned to the
-screen with `position: fixed`, eleven text cards passing through the middle of the screen over
-it, a card becoming active as its top enters the bottom quarter of the screen (so the picture
-changes while it is wholly in view), each card naming the picture's `phase` (0 to 10:
+screen with `position: fixed` a tenth of the way down, thirteen text cards passing through the
+screen over it, a card becoming active as its top enters the bottom quarter of the screen (so the
+picture changes while it is wholly in view), each card naming the picture's `phase` (0 to 12:
 your district's votes; the winner takes it and every voter with no one turns hollow; hold; zoom
 out, the hundred gather in fives into twenty and the district shrinks to a tile; four
 neighbouring tiles slide in; the tiles become one box and the dots travel into columns of
-twenty while the winners turn into plain seats; the seats go over their columns and become the
-matched animals as every dot fills in; hold; rings on the full columns and the two leftover
-winners; your party's columns in focus; all back). A voter with no one is a hollow dot in its
+twenty while the winners turn into open seats, a question mark each; hold; the seats go over
+their columns and become the matched animals as every dot fills in; hold; solid rings on the
+full columns while the two leftover seats go back to question marks; dashed rings on the two
+leftover winners and their animals return; your party's columns in focus; all back). Every
+height in `scrolly.css` is in svh and App.jsx measures the pinned picture rather than
+`window.innerHeight`: dvh or innerHeight change as a phone's address bar slides away and
+would reflow the cards mid-scroll. A voter with no one is a hollow dot in its
 own party colour, never a faded one. The leader is always Cats or Dogs and never the reader's
 party (`election.LEADERS`), on every run. `src/lib/tracks.js` is the engine
 both `Crowd` and `Districts` could share (Districts keeps its own copy): numbers in [0, 1],

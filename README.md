@@ -20,7 +20,7 @@ npm run build      # static output in dist/, deploy anywhere
 ```
 
 Deep link for testing: `/?v=dogs.snoopy&n=3` (vote as `party.candidate`, `n` the card to open
-on, 1 to 11; add `&run=2` for an unrigged deal). On `/v3.html`, `n` is how many steps of the
+on, 1 to 13; add `&run=2` for an unrigged deal). On `/v3.html`, `n` is how many steps of the
 count are revealed, 1 to 9.
 
 The front page (`index.html`, code in `src/v4/`) is the lesson told as a scroll story: one

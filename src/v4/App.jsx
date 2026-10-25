@@ -12,8 +12,11 @@ import { buildStory } from './steps.jsx'
  * reveals the story below: one picture stuck to the screen, and a column of
  * text cards scrolling over it. A card becomes the active step as soon as its
  * top rises into the bottom quarter of the screen, so the picture changes
- * while the card is still low and the whole picture is in view. There is no Next button; scrolling is the control, in both
- * directions. A scene marked `fresh` is mounted only while active, so its
+ * while the card is still low and the whole picture is in view. There is no
+ * Next button; scrolling is the control, in both directions. Every height is
+ * taken from the small viewport (CSS svh, and the pinned picture's box in JS),
+ * never from window.innerHeight, so a phone's address bar sliding away does
+ * not reflow the cards or move the trigger line under the reader's thumb. A scene marked `fresh` is mounted only while active, so its
  * entrance animation plays again every time the reader returns to it.
  *
  * For testing: ?v=dogs.snoopy&n=4 opens with that vote cast and the fourth
@@ -68,7 +71,8 @@ export default function App() {
       const el = storyRef.current
       if (!el) return
       const r = el.getBoundingClientRect()
-      const vh = window.innerHeight
+      // The picture's box is 100svh tall: the stable height, bars or no bars.
+      const vh = el.querySelector('.graphic')?.offsetHeight || window.innerHeight
       const mode = r.top > 0 ? 'before' : r.bottom < vh ? 'after' : 'fixed'
       setPin((p) =>
         p.mode === mode && p.left === r.left && p.width === r.width
@@ -113,7 +117,8 @@ export default function App() {
       const card = li?.querySelector('.card') ?? li
       if (!card) return
       // Park the card on its resting line (scrolly.css: .step padding-top).
-      const top = window.scrollY + card.getBoundingClientRect().top - window.innerHeight * 0.44
+      const rest = parseFloat(getComputedStyle(li).paddingTop) || 0
+      const top = window.scrollY + card.getBoundingClientRect().top - rest
       window.scrollTo({ top, behavior })
     }
     let cancelled = false
